@@ -98,3 +98,8 @@ Key elements defined in **sys/socket.h** include:
 5. **File descriptor operations**:
     - `select()`, `poll()` - Monitor multiple file descriptors
     - FD_SET, FD_CLR, FD_ISSET, FD_ZERO - Macros for managing file descriptor sets
+
+### Our Norm
+- Class Names - UpperCamelcase
+- Function Names - camelCase
+- Variable Names = snake_case

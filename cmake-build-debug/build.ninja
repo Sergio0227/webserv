@@ -55,6 +55,18 @@ build CMakeFiles/webserv.dir/webserv/main.cpp.o: CXX_COMPILER__webserv_unscanned
   OBJECT_DIR = CMakeFiles/webserv.dir
   OBJECT_FILE_DIR = CMakeFiles/webserv.dir/webserv
 
+build CMakeFiles/webserv.dir/webserv/ConfigParser.cpp.o: CXX_COMPILER__webserv_unscanned_Debug /home/sergio/42/webserv/webserv/ConfigParser.cpp || cmake_object_order_depends_target_webserv
+  DEP_FILE = CMakeFiles/webserv.dir/webserv/ConfigParser.cpp.o.d
+  FLAGS = -g -std=gnu++98 -fdiagnostics-color=always
+  OBJECT_DIR = CMakeFiles/webserv.dir
+  OBJECT_FILE_DIR = CMakeFiles/webserv.dir/webserv
+
+build CMakeFiles/webserv.dir/webserv/Socket.cpp.o: CXX_COMPILER__webserv_unscanned_Debug /home/sergio/42/webserv/webserv/Socket.cpp || cmake_object_order_depends_target_webserv
+  DEP_FILE = CMakeFiles/webserv.dir/webserv/Socket.cpp.o.d
+  FLAGS = -g -std=gnu++98 -fdiagnostics-color=always
+  OBJECT_DIR = CMakeFiles/webserv.dir
+  OBJECT_FILE_DIR = CMakeFiles/webserv.dir/webserv
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target webserv
@@ -63,7 +75,7 @@ build CMakeFiles/webserv.dir/webserv/main.cpp.o: CXX_COMPILER__webserv_unscanned
 #############################################
 # Link the executable webserv
 
-build webserv: CXX_EXECUTABLE_LINKER__webserv_Debug CMakeFiles/webserv.dir/webserv/main.cpp.o
+build webserv: CXX_EXECUTABLE_LINKER__webserv_Debug CMakeFiles/webserv.dir/webserv/main.cpp.o CMakeFiles/webserv.dir/webserv/ConfigParser.cpp.o CMakeFiles/webserv.dir/webserv/Socket.cpp.o
   FLAGS = -g
   OBJECT_DIR = CMakeFiles/webserv.dir
   POST_BUILD = :

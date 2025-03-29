@@ -1,7 +1,6 @@
 #include <cstdlib>
 #include <iostream>
-#include <fstream>
-#include <stdlib.h>
+#include "ConfigParser.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -10,8 +9,15 @@ int main(int argc, char *argv[])
         std::cerr << "Error: Too many arguments \n" << "Usage -> ./webserv [configfile]" <<std::endl;
         return EXIT_FAILURE;
     }
-    std::string config_file = "configs/default";
+    std::string config_file_path = "configs/default.conf";
     if (argc == 2)
-        config_file = argv[1];
-    std::ifstream file(config_file.c_str());
+        config_file_path = argv[1];
+    try
+    {
+        ConfigParser config(config_file_path);
+    }
+    catch (const std::runtime_error &e)
+    {
+        std::cout << "Error: " << e.what() << std::endl;
+    }
 }

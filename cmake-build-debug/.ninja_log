@@ -1,2 +1,17 @@
 # ninja log v6
-1	20	1742816111933032024	build.ninja	fbc505ff025c0d2b
+0	5	1742900920007307703	clean	40d7367b24faa8b9
+0	96	1742902472295554233	CMakeFiles/webserv.dir/webserv/main.cpp.o	fc7b5948c141fb13
+0	19	1742908312416316179	build.ninja	fbc505ff025c0d2b
+1	103	1742903357392232518	CMakeFiles/webserv.dir/webserv/ConfigParser.cpp.o	1d6eb7dd6c33cee0
+103	143	1742903357494230704	webserv	615726691d05037a
+2	48	1742908515130836347	CMakeFiles/webserv.dir/webserv/Socket.cpp.o	d6430def7554300f
+48	164	1742908515176835562	webserv	ac536b5d83f1e805
+4	232	1742909754268944152	CMakeFiles/webserv.dir/webserv/main.cpp.o	fc7b5948c141fb13
+5	234	1742909754269944135	CMakeFiles/webserv.dir/webserv/ConfigParser.cpp.o	1d6eb7dd6c33cee0
+234	342	1742909754499940281	webserv	ac536b5d83f1e805
+4	200	1742910786840147121	CMakeFiles/webserv.dir/webserv/ConfigParser.cpp.o	1d6eb7dd6c33cee0
+3	208	1742910786839147139	CMakeFiles/webserv.dir/webserv/main.cpp.o	fc7b5948c141fb13
+208	306	1742910787044143333	webserv	ac536b5d83f1e805
+3	194	1742911826274273103	CMakeFiles/webserv.dir/webserv/main.cpp.o	fc7b5948c141fb13
+4	210	1742911826275273084	CMakeFiles/webserv.dir/webserv/ConfigParser.cpp.o	1d6eb7dd6c33cee0
+210	326	1742911826481269216	webserv	ac536b5d83f1e805

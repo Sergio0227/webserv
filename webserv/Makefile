@@ -1,4 +1,5 @@
-SRC			=	main.cpp
+SRC			=	main.cpp \
+				ConfigParser.cpp
 
 OBJS		= ${SRC:.cpp=.o}
 NAME		= webserv
@@ -41,7 +42,7 @@ ${NAME}: ${OBJS}
 
 clean:
 	@${RM} ${OBJS}
-	@echo -n "$(CYAN)[$(NAME)]:$(DEF_COLOR) object files$(RED) \t => Removed!$(DEF_COLOR)\n";
+	@echo -n "$(CYAN)[$(NAME)]:$(DEF_COLOR) object files$(RED) => Removed!$(DEF_COLOR)\n";
 
 fclean: clean
 	@echo -n "$(CYAN)[$(NAME)]:$(DEF_COLOR) exec. files$(RED)  => Removed!$(DEF_COLOR)\n";
