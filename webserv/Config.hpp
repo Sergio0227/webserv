@@ -6,9 +6,8 @@
 #include <string>
 #include <fstream>
 
-class ConfigParser {
+class Config {
 private:
-    std::fstream    _file;
     std::string     _host;
     int             _port;
     std::string     _document_root;
@@ -17,8 +16,8 @@ private:
     void loadConfig();
 
 public:
-    ConfigParser(std::string const filePath);
-    ~ConfigParser();
+    Config(std::string const filePath);
+    ~Config();
     std::string getHost();
     int getPort();
     std::string getDocumentRoot();
