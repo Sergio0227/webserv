@@ -15,9 +15,8 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
     (void)argv;
-    u_long ip = inet_addr("127.0.0.1");
+    std::string ip = "127.0.0.1";
     int port = 8080;
     // int domain, int type, int protocol, int port, u_long ip, int backlog
-    TcpServer(AF_INET, SOCK_STREAM, 0, port, ip, 1);
     Client(AF_INET, SOCK_STREAM, 0, port, ip);
 }
