@@ -101,13 +101,13 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "webserv/ConfigParser.cpp",
+			"path" : "webserv/Config.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "webserv/Socket.cpp",
+			"path" : "webserv/Server.cpp",
 			"sourceGroupIndex" : 0
 		}
 	],

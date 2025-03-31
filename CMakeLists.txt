@@ -5,5 +5,5 @@ set(CMAKE_CXX_STANDARD 98)
 
 add_executable(webserv
         webserv/main.cpp
-        webserv/ConfigParser.cpp
-        webserv/Socket.cpp)
+        webserv/Config.cpp
+        webserv/Server.cpp)
