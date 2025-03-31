@@ -2,7 +2,6 @@
 
 Client::Client(int domain, int type, int protocol, int port, std::string &ip) : Socket(domain, type, protocol, port, ip)
 {
-    std::cout << "client obj + socket created" << std::endl;
     connectToSocket();
 }
 

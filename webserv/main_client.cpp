@@ -21,10 +21,6 @@ int main(int argc, char *argv[])
 	try
 	{
 		Client(AF_INET, SOCK_STREAM, 0, port, ip);
-		Client(AF_INET, SOCK_STREAM, 0, port, ip);
-		Client(AF_INET, SOCK_STREAM, 0, port, ip);
-		Client(AF_INET, SOCK_STREAM, 0, port, ip);
-		Client(AF_INET, SOCK_STREAM, 0, port, ip);
 	}
 	catch (std::exception &e)
 	{

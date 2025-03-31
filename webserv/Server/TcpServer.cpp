@@ -36,7 +36,26 @@ void TcpServer::acceptConnections()
         read(_client_socket, buffer, 1024);
         std::cout << buffer << std::endl;
         std::cout << "Writing" << std::endl;
-        write(_client_socket, "Test", 4);
+        std::string body = "<html><body><h1>200 OK</h1><p>Hello, world!</p></body></html>";
+        std::string msg = "OK";
+        sendHttpResponse(200, msg, body);
         close(_client_socket);
     }
+}
+void TcpServer::sendHttpResponse(int status_code, std::string &msg, std::string &body)
+{
+    std::ostringstream oss;
+    oss << status_code;
+    std::string status_code_str = oss.str();
+    oss.str("");
+    oss.clear();
+    oss << body.size();
+    std::string body_len = oss.str();
+    std::string response = "HTTP/1.1 " + status_code_str + " " + msg + "\r\n";
+    response += "Content-Type: text/html\r\n";
+    response += "Content-Length: " + body_len + "\r\n";
+    response += "Connection: close\r\n";
+    response += "\r\n";
+    response += body;
+    send(_client_socket, response.c_str(), response.size(), 0);
 }

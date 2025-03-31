@@ -13,4 +13,5 @@ class TcpServer : public Socket
 		TcpServer &operator=(const TcpServer &other);
 		~TcpServer();
 		void acceptConnections();
+		void sendHttpResponse(int status_code, std::string &msg, std::string &body);
 };
