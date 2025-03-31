@@ -15,6 +15,9 @@ void Client::connectToSocket()
     write(_socket_fd, "Hello from Client\n", 19);
     char buf[1024];
     std::cout << "Reading from server socket" << std::endl;
-    read(_socket_fd, buf, 1024);
+    int bytes_read = read(_socket_fd, buf, 1024);
+    if (bytes_read < 0)
+        throw std::runtime_error("Error: Failed to read from server");
+    buf[bytes_read] = '\0';
     std::cout << buf << std::endl;
 }
