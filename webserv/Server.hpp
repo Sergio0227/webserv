@@ -9,7 +9,7 @@
 class Server {
 private:
     int     server_id;
-    //Config  config;
+    Config  config;
 
 public:
     Server(unsigned int index);

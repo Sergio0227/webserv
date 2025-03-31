@@ -5,23 +5,18 @@
 
 #include <string>
 #include <fstream>
+#include <vector>
 
 class Config {
 private:
-    std::string     _host;
-    int             _port;
-    std::string     _document_root;
-    std::string     _index;
+    std::string     _listen;
+    std::string     _server_name;
+    std::vector<std::vector<std::string> > _location;
 
-    void loadConfig();
 
 public:
-    Config(std::string const filePath);
+    Config();
     ~Config();
-    std::string getHost();
-    int getPort();
-    std::string getDocumentRoot();
-    std::string getIndex();
 };
 
 
