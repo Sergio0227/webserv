@@ -2,6 +2,10 @@
 #include <iostream>
 #include <fstream>
 #include <stdlib.h>
+#include "Socket.hpp"
+#include "Client.hpp"
+#include "TcpServer.hpp"
+
 
 int main(int argc, char *argv[])
 {
@@ -10,8 +14,10 @@ int main(int argc, char *argv[])
         std::cerr << "Error: Too many arguments \n" << "Usage -> ./webserv [configfile]" <<std::endl;
         return EXIT_FAILURE;
     }
-    std::string config_file = "configs/default";
-    if (argc == 2)
-        config_file = argv[1];
-    std::ifstream file(config_file.c_str());
+    (void)argv;
+    u_long ip = inet_addr("127.0.0.1");
+    int port = 8080;
+    // int domain, int type, int protocol, int port, u_long ip, int backlog
+    TcpServer(AF_INET, SOCK_STREAM, 0, port, ip, 1);
+    Client(AF_INET, SOCK_STREAM, 0, port, ip);
 }

@@ -3,21 +3,22 @@
 #include <sys/socket.h>
 #include <iostream>
 #include <stdexcept>
-
+#include <unistd.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 class Socket
 {
-	private:
-		int _socket;
-		int _domain;
-		int _type;
-		int _protocol;
+	protected:
+		sockaddr_in _socket_addr;
+		int _socket_fd;
+		Socket();
 
 	public:
-		Socket();
+		Socket(int domain, int type, int protocol, int port, u_long ip);
 		Socket(const Socket &other);
 		Socket &operator=(const Socket &other);
-		~Socket();
+		virtual ~Socket();
 };
 
 

@@ -1,8 +1,8 @@
-SRC			=	main.cpp
+SRC			=	main.cpp Client.cpp Socket.cpp TcpServer.cpp
 
 OBJS		= ${SRC:.cpp=.o}
 NAME		= webserv
-CFLAGS		= -Werror -Wall -Wextra
+CFLAGS		= #-Werror -Wall -Wextra
 CPPFLAGS	= -std=c++98
 CC			= c++
 RM			= rm -rf
