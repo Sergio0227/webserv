@@ -5,7 +5,7 @@ CLIENT_OBJ = $(CLIENT_SRC:.cpp=.o)
 SERVER_OBJ = $(SERVER_SRC:.cpp=.o)
 CLIENT_EXEC = client
 SERVER_EXEC = server
-CFLAGS		= #-Werror -Wall -Wextra
+CFLAGS		= # -Werror -Wall -Wextra
 CPPFLAGS	= -std=c++98 -I./Socket -I./Client -I./Server -I.
 CC			= c++
 RM			= rm -rf

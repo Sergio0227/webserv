@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstring>
 #include <sstream>
+#include <map>
 
 #include <sys/socket.h>
 /*
@@ -66,3 +67,22 @@ inet_aton() converts an ipv4 char * like "127.0.0.1" to an int, can handle ipv4
 inet_pton() converts ipv4 or ipv6 char * to an int and is more modern than aton
 
 */
+struct RequestInfo
+{
+	std::string method;
+	std::string http_version;
+	std::string path;
+
+	std::string body;
+	std::string query_string;
+	std::map<std::string, std::string> headers;
+};
+struct ClientInfo
+{
+	std::string ip_address;
+	int socket_fd;
+	int port;
+	time_t connection_time;
+    bool keep_alive;
+	RequestInfo info;
+};
