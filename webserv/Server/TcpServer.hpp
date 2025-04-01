@@ -14,4 +14,9 @@ class TcpServer : public Socket
 		~TcpServer();
 		void acceptConnections();
 		void sendHttpResponse(int status_code, std::string &msg, std::string &body);
+		void handleRequest();
+		void readRequest();
+        void parseRequest(std::string &line);
+        int checkRequest(std::string &msg);
+        void executeRequest();
 };

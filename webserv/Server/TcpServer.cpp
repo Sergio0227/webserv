@@ -23,6 +23,8 @@ TcpServer &TcpServer::operator=(const TcpServer &other)
 TcpServer::~TcpServer()
 {
 }
+
+//want to use select for now, select can handle 1024 fd and checks if one has readable data in it, when yes read it
 void TcpServer::acceptConnections()
 {
     socklen_t client_addr_len = sizeof(_client_addr);
@@ -31,17 +33,59 @@ void TcpServer::acceptConnections()
     {
         if ((_client_socket = accept(_socket_fd, (struct sockaddr *)&_client_addr, &client_addr_len)) < 0)
             throw std::runtime_error("Error: Can't accept the connection!");
-        char buffer[1024];
-        std::cout << "Reading" << std::endl;
-        read(_client_socket, buffer, 1024);
-        std::cout << buffer << std::endl;
-        std::cout << "Writing" << std::endl;
+        handleRequest();
         std::string body = "<html><body><h1>200 OK</h1><p>Hello, world!</p></body></html>";
         std::string msg = "OK";
         sendHttpResponse(200, msg, body);
         close(_client_socket);
     }
 }
+//parse rquest to methods, based on method execute request or handle error
+void TcpServer::handleRequest()
+{
+    std::string msg;
+    int status_code;
+    readRequest();
+    status_code = checkRequest(msg);
+	//if client==get read html and write it to body
+    sendHttpResponse(status_code, msg, body);
+    executeRequest(); 
+}
+
+void TcpServer::readRequest()
+{
+	char buffer[1024];
+	int bytes_read = recv(_client_socket, buffer, sizeof(buffer) - 1, 0);
+	buffer[bytes_read] = '\0';
+	std::string clientRequest = buffer;
+	std::string::iterator it = clientRequest.begin();
+	std::string::iterator it_end;
+	std::string line;
+	while (it != clientRequest.end())
+	{
+		while (*it != '\n')
+		{
+			it++;
+		}
+		it_end = it;
+		line = std::string(it, it_end);
+		parseRequest(line);
+		it++;
+	}
+}
+void TcpServer::parseRequest(std::string &line)
+{
+
+}
+int TcpServer::checkRequest(std::string &msg)
+{
+
+}
+void TcpServer::executeRequest()
+{
+
+}
+
 void TcpServer::sendHttpResponse(int status_code, std::string &msg, std::string &body)
 {
     std::ostringstream oss;
