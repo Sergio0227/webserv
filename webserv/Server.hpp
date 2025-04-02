@@ -8,11 +8,11 @@
 
 class Server {
 private:
-    int     server_id;
-    Config  config;
+    unsigned int     _server_id;
+    Config  *_config;
 
 public:
-    Server(unsigned int index);
+    Server(unsigned int index, std::vector<std::string> config_section);
     ~Server(void);
 
     //Config getConfig(int index);

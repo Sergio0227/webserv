@@ -1,8 +1,9 @@
 #include "Server.hpp"
 
-Server::Server(unsigned int index)
+Server::Server(unsigned int index, std::vector<std::string> config_section)
 {
-    this->server_id = index + 1;
+    this->_server_id = index;
+    this->_config = new Config(config_section);
 }
 
 Server::~Server(void)

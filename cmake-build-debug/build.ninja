@@ -73,6 +73,14 @@ build CMakeFiles/webserv.dir/webserv/Server.cpp.o: CXX_COMPILER__webserv_unscann
   TARGET_COMPILE_PDB = CMakeFiles/webserv.dir/
   TARGET_PDB = webserv.pdb
 
+build CMakeFiles/webserv.dir/webserv/utils.cpp.o: CXX_COMPILER__webserv_unscanned_Debug /home/sergio/42/webserv/webserv/utils.cpp || cmake_object_order_depends_target_webserv
+  DEP_FILE = CMakeFiles/webserv.dir/webserv/utils.cpp.o.d
+  FLAGS = -g -std=gnu++98 -fdiagnostics-color=always
+  OBJECT_DIR = CMakeFiles/webserv.dir
+  OBJECT_FILE_DIR = CMakeFiles/webserv.dir/webserv
+  TARGET_COMPILE_PDB = CMakeFiles/webserv.dir/
+  TARGET_PDB = webserv.pdb
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target webserv
@@ -81,7 +89,7 @@ build CMakeFiles/webserv.dir/webserv/Server.cpp.o: CXX_COMPILER__webserv_unscann
 #############################################
 # Link the executable webserv
 
-build webserv: CXX_EXECUTABLE_LINKER__webserv_Debug CMakeFiles/webserv.dir/webserv/main.cpp.o CMakeFiles/webserv.dir/webserv/Config.cpp.o CMakeFiles/webserv.dir/webserv/Server.cpp.o
+build webserv: CXX_EXECUTABLE_LINKER__webserv_Debug CMakeFiles/webserv.dir/webserv/main.cpp.o CMakeFiles/webserv.dir/webserv/Config.cpp.o CMakeFiles/webserv.dir/webserv/Server.cpp.o CMakeFiles/webserv.dir/webserv/utils.cpp.o
   FLAGS = -g
   OBJECT_DIR = CMakeFiles/webserv.dir
   POST_BUILD = :

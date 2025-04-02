@@ -1,5 +1,7 @@
 SRC			=	main.cpp \
-				Server.cpp
+				Server.cpp \
+				Config.cpp \
+				utils.cpp
 
 OBJS		= ${SRC:.cpp=.o}
 NAME		= webserv
