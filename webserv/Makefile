@@ -1,5 +1,5 @@
 
-CLIENT_SRC = Client/Client.cpp Socket/Socket.cpp main_client.cpp
+CLIENT_SRC = Client/Client.cpp Socket/Socket.cpp main_client.cpp utils.cpp
 SERVER_SRC = Server/TcpServer.cpp Socket/Socket.cpp main_server.cpp
 CLIENT_OBJ = $(CLIENT_SRC:.cpp=.o)
 SERVER_OBJ = $(SERVER_SRC:.cpp=.o)

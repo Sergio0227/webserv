@@ -5,8 +5,12 @@
 #include <unistd.h>
 #include <algorithm>
 #include <cstring>
+#include <cerrno>
 #include <sstream>
 #include <map>
+#include <fstream>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include <sys/socket.h>
 /*
@@ -86,3 +90,6 @@ struct ClientInfo
     bool keep_alive;
 	RequestInfo info;
 };
+
+std::string parseFileToString(const char *filename);
+bool pathExists(std::string path);
