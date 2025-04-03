@@ -15,3 +15,4 @@ std::string trim(const std::string& str)
         --end;
     return str.substr(start, end - start);
 }
+
