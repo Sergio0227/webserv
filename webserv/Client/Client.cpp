@@ -31,7 +31,7 @@ void Client::readFromServer()
 // example of GET method
 void Client::sendRequest()
 {
-	std::string requestLine = "GET /example.html HTTP/1.1 \r\n";
+	std::string requestLine = "GET /index.html HTTP/1.1\r\n";
 	requestLine += "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8\r\n";
 	requestLine += "Accept-Encoding: gzip, deflate, br, zstd\r\n";
 	requestLine += "Cache-Control: max-age=0\r\n";

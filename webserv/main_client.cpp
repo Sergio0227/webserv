@@ -1,10 +1,5 @@
-#include <cstdlib>
-#include <iostream>
-#include <fstream>
-#include <stdlib.h>
-#include "Socket.hpp"
 #include "Client.hpp"
-#include "TcpServer.hpp"
+#include "HttpServer.hpp"
 
 
 int main(int argc, char *argv[])
@@ -17,7 +12,6 @@ int main(int argc, char *argv[])
 	(void)argv;
 	std::string ip = "127.0.0.1";
 	int port = 8080;
-	// int domain, int type, int protocol, int port, u_long ip, int backlog
 	try
 	{
 		Client(AF_INET, SOCK_STREAM, 0, port, ip);

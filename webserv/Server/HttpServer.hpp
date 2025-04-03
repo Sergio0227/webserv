@@ -1,11 +1,13 @@
 #pragma once
 #include "Socket.hpp"
 
-class TcpServer : public Socket
+class HttpServer : public Socket
 {
   private:
-	TcpServer();
+	HttpServer();
 	int _backlog;
+	//in server struct
+	std::string root_path;
 	fd_set _cur_sockets, _rdy_sockets;
 	std::map<int, ClientInfo> _client_info;
 
@@ -23,8 +25,12 @@ class TcpServer : public Socket
 	void sendHttpResponse(int fd, int status_code, const char *msg,
 		std::string &body);
 
-  public:
-	TcpServer(int domain, int type, int protocol, int port, std::string &ip,
+	std::string parseFileToString(const char *filename);
+
+	bool pathExists(std::string &path);
+
+public:
+	HttpServer(int domain, int type, int protocol, int port, std::string &ip,
 		int backlog);
-	~TcpServer();
+	~HttpServer();
 };

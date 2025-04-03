@@ -1,6 +1,6 @@
 
-CLIENT_SRC = Client/Client.cpp Socket/Socket.cpp main_client.cpp utils.cpp
-SERVER_SRC = Server/TcpServer.cpp Socket/Socket.cpp main_server.cpp
+CLIENT_SRC = Client/Client.cpp Socket/Socket.cpp main_client.cpp
+SERVER_SRC = Server/HttpServer.cpp Socket/Socket.cpp main_server.cpp utils.cpp
 CLIENT_OBJ = $(CLIENT_SRC:.cpp=.o)
 SERVER_OBJ = $(SERVER_SRC:.cpp=.o)
 CLIENT_EXEC = client
@@ -29,6 +29,7 @@ $(CLIENT_EXEC): $(CLIENT_OBJ)
 
 $(SERVER_EXEC): $(SERVER_OBJ)
 	$(CC) $(SERVER_OBJ) -o $(SERVER_EXEC)
+
 %.o: %.cpp
 	@echo "Compiling $< with flags \"${CFLAGS}\" and \"${CPPFLAGS}\""
 	@${CC} ${CFLAGS} ${CPPFLAGS} -c $< -o $@

@@ -78,11 +78,12 @@ struct RequestInfo
 	std::string path;
 
 	std::string body;
-	std::string query_string;
+	//std::string query_string;
 	std::map<std::string, std::string> headers;
 };
 struct ClientInfo
 {
+	bool closed_connection;
 	std::string ip_address;
 	int socket_fd;
 	int port;
@@ -90,6 +91,3 @@ struct ClientInfo
     bool keep_alive;
 	RequestInfo info;
 };
-
-std::string parseFileToString(const char *filename);
-bool pathExists(std::string path);
