@@ -73,6 +73,7 @@ inet_pton() converts ipv4 or ipv6 char * to an int and is more modern than aton
 */
 struct RequestInfo
 {
+	std::string request;
 	std::string method;
 	std::string http_version;
 	std::string path;
@@ -83,11 +84,12 @@ struct RequestInfo
 };
 struct ClientInfo
 {
+	int fd;
 	bool closed_connection;
-	std::string ip_address;
-	int socket_fd;
-	int port;
+	sockaddr_in addr;
 	time_t connection_time;
     bool keep_alive;
 	RequestInfo info;
 };
+
+void printClientInfo(ClientInfo &info);

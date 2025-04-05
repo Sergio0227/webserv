@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 	int backlog = 5;
 	try
 	{
-		HttpServer(AF_INET, SOCK_STREAM, 0, port, ip, backlog);
+		HttpServer(AF_INET, SOCK_STREAM, 0, port, ip, backlog, true);
 	}
 	catch (std::exception &e)
 	{
