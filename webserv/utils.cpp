@@ -24,12 +24,15 @@ void	printClientInfo(ClientInfo &info)
 	}
 	else
 		std::cout << "No headers found." << std::endl;
-	if (!info.info.body.empty())
-		std::cout << "Body: " << info.info.body << std::endl;
+	if (!info.info.body.email.empty())
+	{
+		std::cout << "Body email: " << info.info.body.email << std::endl;
+		std::cout << "Body passw: " << info.info.body.passw << std::endl;
+	}
 	std::cout << "----------------------------------------" << std::endl;
 }
 
-Methods getMethod(std::string &method)
+Methods getEnumMethod(std::string &method)
 {
 	if (method == "GET")
 		return GET;
@@ -40,6 +43,18 @@ Methods getMethod(std::string &method)
 	else if (method == "PUT")
 		return PUT;
 	return UNKNOWN_METHOD;
+}
+
+std::string getStringMethod(Methods method)
+{
+	switch (method)
+	{
+		case GET:		return "GET";
+		case POST:		return "POST";
+		case DELETE:	return "DELETE";
+		case PUT:		return "PUT";
+		default:		return "UNKNOWN_METHOD";
+	}
 }
 
 std::string getCurrentTime()
@@ -59,45 +74,96 @@ std::string getCurrentTime()
 	return (ss.str());
 }
 
-void logMessage(LogType level, const std::string& message, ClientInfo *ptr_info)
+void logMessage(LogType level, const std::string& message, ClientInfo *ptr_info, int flag)
 {
-	std::string s;
-	std::string c;
-
-	switch (level)
-	{
-		case INFO:
-			s = "[INFO]";
-			c = BLUE;
-			break;
-		case DEBUG:
-			s = "[DEBUG]";
-			c = ORANGE;
-			break;
-		case ERROR:
-			s = "[ERROR]";
-			c = RED;
-			break;
-		case SUCCESS:
-			s = "[SUCCESS]";
-			c = GREEN;
-			break;
-		default:
-			break;
-	}
-	if (c.empty())
-		return;
-	while (s.size() != 14)
-		s.append(" ");
+	std::string category, color;
+	std::pair<std::string, std::string> pair = getPairLog(level);
+	category = pair.first;
+	color = pair.second;
+	while (category.size() != 14)
+		category.append(" ");
 	if (ptr_info == NULL)
-		std::cout << c << s << RESET << getCurrentTime() << "\t-\t" << message << std::endl;
+		std::cout << color << category << RESET << getCurrentTime() << "\t-\t" << message << std::endl;
 	else
 	{
-		struct in_addr ip_addr;
-		ip_addr.s_addr = ptr_info->addr.sin_addr.s_addr;
-		std::string ip_str = inet_ntoa(ip_addr);
-		uint16_t port = ntohs(ptr_info->addr.sin_port);
-		std::cout << c << s << RESET << getCurrentTime() << "\t-\t" << message << " -> " << "(IP: " << ip_str << " | " << "PORT: " << port << ")" << std::endl;
+		if (flag == 0)
+		{
+			std::cout << color << category << RESET << getCurrentTime()
+				<< "\t-\t" << message << " -> "
+				<< "(IP: " << inet_ntoa(ptr_info->addr.sin_addr) << " | "
+				<< "PORT: " << ntohs(ptr_info->addr.sin_port) << ")"
+				<< std::endl;
+		}
+		else if (flag == 1)
+		{
+			std::cout << color << category << RESET << getCurrentTime()
+				<< "\t-\t" << message << " -> "
+				<< "(IP: " << inet_ntoa(ptr_info->addr.sin_addr) << " | "
+				<< "PORT: " << ntohs(ptr_info->addr.sin_port) << ")"
+				<< "{ Method: " << ptr_info->info.method << " | Path: " << ptr_info->info.path << " }" << std::endl;
+		}
+		else if (flag == 2)
+		{
+			std::cout << color << category << RESET << getCurrentTime()
+				<< "\t-\t" << message << " -> "
+				<< "(IP: " << inet_ntoa(ptr_info->addr.sin_addr) << " | "
+				<< "PORT: " << ntohs(ptr_info->addr.sin_port) << ")  |  "
+				<< "Request -> (Method: " << getStringMethod(ptr_info->info.method) << " | Path: " << ptr_info->info.path << ")"
+				<< "  |  Server: (Code: " << ptr_info->status_code << " | Msg: " << ptr_info->status_msg << ")" << std::endl;
+		}
 	}
 }
 
+std::pair<std::string, std::string> getPairLog(LogType level)
+{
+	std::map<LogType, std::pair<std::string, std::string> > log_map;
+	log_map[INFO] = std::make_pair("[INFO]", BLUE);
+	log_map[DEBUG] = std::make_pair("[DEBUG]", ORANGE);
+	log_map[ERROR] = std::make_pair("[ERROR]", RED);
+	log_map[SUCCESS] = std::make_pair("[SUCCESS]", GREEN);
+	return log_map[level];
+}
+
+std::string getStatusMessage(int code)
+{
+	std::map<int, std::string> status_map;
+	status_map[405] = "Method Not Allowed";
+	status_map[404] = "Not Found";
+	status_map[505] = "HTTP Version Not Supported";
+	status_map[400] = "Bad Request";
+	status_map[415] = "Unsupported Media Type";
+	status_map[409] = "Conflict";
+	status_map[200] = "OK";
+	status_map[201] = "Created";
+    if (status_map.find(code) != status_map.end())
+		return status_map[code];
+	else
+		return "Unknown Error";
+}
+
+bool emailExists(ClientInfo &info)
+{
+	std::fstream file("var/www/data/users.csv", std::ios::in);
+	std::string line;
+
+	if (!file.is_open())
+		return false;
+	while (getline(file, line))
+	{
+		std::string csv_email = line.substr(0, line.find(','));
+		if (csv_email == info.info.body.email)
+		{
+			file.close();
+			return true;
+		}	
+	}
+	file.close();
+	return false;
+}
+
+void storeCredential(BodyInfo body, const char *name)
+{
+	std::fstream file(name, std::ios::out | std::ios::app);
+	file << body.email << "," << body.passw << "\n";
+	file.close();
+}

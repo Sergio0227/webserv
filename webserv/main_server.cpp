@@ -7,7 +7,7 @@ void handleShutdown(int signal)
 {
 	(void)signal;
 	std::cout << std::endl;
-	logMessage(INFO, "Server Shutdown Initiated.", NULL);
+	logMessage(INFO, "Server Shutdown Initiated.", NULL, 0);
 	g_flag = 0;
 }
 
@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 	int backlog = 5;
 	try
 	{
-		HttpServer(AF_INET, SOCK_STREAM, 0, port, ip, backlog, false);
+		HttpServer(AF_INET, SOCK_STREAM, 0, port, ip, backlog, true);
 	}
 	catch (std::exception &e)
 	{

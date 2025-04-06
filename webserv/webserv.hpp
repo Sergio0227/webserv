@@ -82,7 +82,7 @@ inet_aton() converts an ipv4 char * like "127.0.0.1" to an int, can handle ipv4
 inet_pton() converts ipv4 or ipv6 char * to an int and is more modern than aton
 
 */
-extern int g_flag;
+extern int	g_flag;
 
 enum Methods
 {
@@ -101,28 +101,45 @@ enum LogType
 	SUCCESS
 };
 
+struct BodyInfo
+{
+	std::string	body_str;
+	std::string	email;
+	std::string	passw;
+};
 struct RequestInfo
 {
-	std::string request;
-	Methods method;
-	std::string http_version;
-	std::string path;
+	std::string							request;
+	Methods								method;
+	std::string							http_version;
+	std::string							path;
 
-	std::string body;
-	//std::string query_string;
-	std::map<std::string, std::string> headers;
+	BodyInfo							body;
+	std::map<std::string, std::string>	headers;
 };
 struct ClientInfo
 {
-	int fd;
-	bool closed_connection;
-	sockaddr_in addr;
-	time_t connection_time;
-    bool keep_alive;
-	RequestInfo info;
+	int			fd;
+	int			status_code;
+	std::string	status_msg;
+	bool		close_connection;
+	sockaddr_in	addr;
+	time_t		connection_time;
+    bool		keep_alive;
+	RequestInfo	info;
 };
 
-Methods		getMethod(std::string &method);
-std::string	getCurrentTime();
-void		logMessage(LogType level, const std::string& message, ClientInfo *ptr_info);
+void		logMessage(LogType level, const std::string& message, ClientInfo *ptr_info, int flag);
 void		printClientInfo(ClientInfo &info);
+
+Methods getEnumMethod(std::string &method);
+
+bool	emailExists(ClientInfo &info);
+
+void storeCredential(BodyInfo body, const char *name);
+
+std::string getStringMethod(Methods method);
+
+std::string getCurrentTime();
+std::string							getStatusMessage(int code);
+std::pair<std::string, std::string> getPairLog(LogType level);

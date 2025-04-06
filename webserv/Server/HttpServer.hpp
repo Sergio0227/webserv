@@ -3,35 +3,38 @@
 
 class HttpServer : public Socket
 {
-  private:
-	HttpServer();
-	int _backlog;
-	bool _debug;
-	// serverConfig struct
-	std::string root_path;
-	//
-	fd_set _cur_sockets, _rdy_sockets;
-	std::map<int, ClientInfo> _client_info;
+	private:
+		int		_backlog;
+		bool	_debug;
+		fd_set _cur_sockets, _rdy_sockets;
 
-	void handleIncomingConnections();
-	int acceptConnections();
-	void closeConnection(int fd);
-	std::string extractBody(ClientInfo &info);
-	void handleRequest(int client_fd);
-	void parseRequest(ClientInfo &info);
-	std::string readRequest(ClientInfo &info);
-	void parseRequestLine(ClientInfo &info);
-	void parseRequestHeader(ClientInfo &info);
-	void parseRequestBody(ClientInfo &info);
-	void executeResponse(ClientInfo &info);
-	void sendHttpResponse(int fd, int status_code, const char *msg,
-		std::string &body);
-	std::string parseFileToString(const char *filename);
+		// serverConfig struct
+		std::string root_path;
 
-	bool pathExists(std::string &path);
+		//monitor sockets
+		std::map<int, ClientInfo> _client_info;
 
-public:
-	HttpServer(int domain, int type, int protocol, int port, std::string &ip,
-		int backlog, bool debug);
-	~HttpServer();
+		HttpServer();
+		void	handleIncomingConnections();
+		void	parseRequest(ClientInfo &info);
+		void	parseRequestLine(ClientInfo &info);
+		void	parseRequestHeader(ClientInfo &info);
+		void	parseRequestBody(ClientInfo &info);
+		void	handleErrorResponse(ClientInfo &info);
+		void	executeResponse(ClientInfo &info);
+		void sendHttpResponse(ClientInfo &info, const char *msg, std::string &body, const char *location);
+		void	handleRequest(int client_fd);
+		void	closeConnection(int fd);
+		
+		int		acceptConnections();
+
+		std::string	extractBody(ClientInfo &info);
+		std::string	readRequest(ClientInfo &info);
+		std::string parseFileToString(const char *filename);
+
+		bool pathExists(std::string &path);
+	
+	public:
+		HttpServer(int domain, int type, int protocol, int port, std::string &ip, int backlog, bool debug);
+		~HttpServer();
 };
