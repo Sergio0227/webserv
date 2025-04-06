@@ -23,9 +23,7 @@ class HttpServer : public Socket
 	void parseRequestLine(ClientInfo &info);
 	void parseRequestHeader(ClientInfo &info);
 	void parseRequestBody(ClientInfo &info);
-	int checkRequest(std::string &msg);
-	void executeResponse();
-	void executeRequest();
+	void executeResponse(ClientInfo &info);
 	void sendHttpResponse(int fd, int status_code, const char *msg,
 		std::string &body);
 	std::string parseFileToString(const char *filename);

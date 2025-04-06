@@ -11,8 +11,18 @@
 #include <fstream>
 #include <unistd.h>
 #include <fcntl.h>
-
+#include <vector>
+#include <csignal>
 #include <sys/socket.h>
+#include <ctime>
+#include <iomanip>
+
+#define BLUE "\033[34m"
+#define GREEN "\033[32m"
+#define RED "\033[31m"
+#define ORANGE "\033[38;5;214m"
+#define RESET "\033[0m"
+
 /*
 ---Function Prototypes in Header----
 int socket(int domain, int type, int protocol)
@@ -57,6 +67,7 @@ uint32_t htonl(uint32_t hostlong)
 ---Info------------
 htons() converts 16 bit host byte order to network byte order, network endianess is always Big-endian, used for ports
 htonl() converts 32 bits...used for ip
+
 */
 
 #include <arpa/inet.h>
@@ -71,10 +82,29 @@ inet_aton() converts an ipv4 char * like "127.0.0.1" to an int, can handle ipv4
 inet_pton() converts ipv4 or ipv6 char * to an int and is more modern than aton
 
 */
+extern int g_flag;
+
+enum Methods
+{
+	GET,
+	POST,
+	DELETE,
+	PUT,
+	UNKNOWN_METHOD
+};
+
+enum LogType
+{
+	INFO,
+	DEBUG,
+	ERROR,
+	SUCCESS
+};
+
 struct RequestInfo
 {
 	std::string request;
-	std::string method;
+	Methods method;
 	std::string http_version;
 	std::string path;
 
@@ -92,4 +122,7 @@ struct ClientInfo
 	RequestInfo info;
 };
 
-void printClientInfo(ClientInfo &info);
+Methods		getMethod(std::string &method);
+std::string	getCurrentTime();
+void		logMessage(LogType level, const std::string& message, ClientInfo *ptr_info);
+void		printClientInfo(ClientInfo &info);

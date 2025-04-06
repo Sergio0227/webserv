@@ -29,3 +29,75 @@ void	printClientInfo(ClientInfo &info)
 	std::cout << "----------------------------------------" << std::endl;
 }
 
+Methods getMethod(std::string &method)
+{
+	if (method == "GET")
+		return GET;
+	else if (method == "POST")
+		return POST;
+	else if (method == "DELETE")
+		return DELETE;
+	else if (method == "PUT")
+		return PUT;
+	return UNKNOWN_METHOD;
+}
+
+std::string getCurrentTime()
+{
+	time_t t;
+	struct tm* localTime;
+	std::stringstream ss;
+
+	time(&t);
+	localTime = localtime(&t);
+	ss << localTime->tm_year + 1900
+		<< "-" << std::setw(2) << std::setfill('0') << localTime->tm_mon + 1
+		<< "-" << std::setw(2) << std::setfill('0') << localTime->tm_mday
+		<< " " << std::setw(2) << std::setfill('0') << localTime->tm_hour
+		<< ":" << std::setw(2) << std::setfill('0') << localTime->tm_min
+		<< ":" << std::setw(2) << std::setfill('0') << localTime->tm_sec;
+	return (ss.str());
+}
+
+void logMessage(LogType level, const std::string& message, ClientInfo *ptr_info)
+{
+	std::string s;
+	std::string c;
+
+	switch (level)
+	{
+		case INFO:
+			s = "[INFO]";
+			c = BLUE;
+			break;
+		case DEBUG:
+			s = "[DEBUG]";
+			c = ORANGE;
+			break;
+		case ERROR:
+			s = "[ERROR]";
+			c = RED;
+			break;
+		case SUCCESS:
+			s = "[SUCCESS]";
+			c = GREEN;
+			break;
+		default:
+			break;
+	}
+	if (c.empty())
+		return;
+	while (s.size() != 14)
+		s.append(" ");
+	if (ptr_info == NULL)
+		std::cout << c << s << RESET << getCurrentTime() << "\t-\t" << message << std::endl;
+	else
+	{
+		struct in_addr ip_addr;
+		ip_addr.s_addr = ptr_info->addr.sin_addr.s_addr;
+		std::string ip_str = inet_ntoa(ip_addr);
+		uint16_t port = ntohs(ptr_info->addr.sin_port);
+		std::cout << c << s << RESET << getCurrentTime() << "\t-\t" << message << " -> " << "(IP: " << ip_str << " | " << "PORT: " << port << ")" << std::endl;
+	}
+}
+

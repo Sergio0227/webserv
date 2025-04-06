@@ -5,6 +5,7 @@ HttpServer::HttpServer()
 
 HttpServer::HttpServer(int domain, int type, int protocol, int port, std::string &ip, int backlog, bool debug) : Socket(domain, type, protocol, port, ip) 
 {
+
 	//init serverStruct
 	root_path = "var/www/html";
 
@@ -12,10 +13,14 @@ HttpServer::HttpServer(int domain, int type, int protocol, int port, std::string
 	_backlog = backlog;
 	FD_ZERO(&_cur_sockets);
 	FD_SET(_socket_fd, &_cur_sockets);
+	_client_info[_socket_fd].fd = _socket_fd; //first entry in _client_info map is server socked with addr saved to clean up
+	_client_info[_socket_fd].addr = _socket_addr;
+
 	if (bind(_socket_fd, (sockaddr *)&_socket_addr, sizeof(_socket_addr)) < 0)
-		errorHandler("bind");
+		errorHandler("Bind");
 	if (listen(_socket_fd, _backlog) < 0)
-		errorHandler("listen");
+		errorHandler("Listen");
+	logMessage(SUCCESS, "Server successfully set up and listening for incoming connections.", NULL);
 	handleIncomingConnections();
 }
 
@@ -25,19 +30,29 @@ HttpServer::~HttpServer()
 	{
 		if (FD_ISSET(i, &_cur_sockets))
 		{
+			if (i == _socket_fd)
+				logMessage(INFO, "Server connection closed.", &_client_info[i]);
+			else
+				logMessage(INFO, "Client connection closed.", &_client_info[i]);
 			close(i);
 			FD_CLR(i, &_cur_sockets);
 		}
 	}
+	logMessage(SUCCESS, "Server has successfully shut down. All connections closed.", NULL);
 }
 
 void HttpServer::handleIncomingConnections()
 {
-	while (1)
+	while (g_flag)
 	{
 		_rdy_sockets = _cur_sockets;
 		if (select(FD_SETSIZE, &_rdy_sockets, NULL, NULL, NULL) < 0)
-			errorHandler("select");
+		{
+			if (errno == EINTR)
+				continue;
+			else
+				errorHandler("Select");
+		}	
 		for (int i = 0; i < FD_SETSIZE; ++i)
 		{
 			if (FD_ISSET(i, &_rdy_sockets))
@@ -45,12 +60,14 @@ void HttpServer::handleIncomingConnections()
 				if (i == _socket_fd)
 				{
 					int client_fd = acceptConnections();
+					if (client_fd < 0)
+						continue;
 					FD_SET(client_fd, &_cur_sockets);
 				}
 				else
 					handleRequest(i);
 			}
-		}        
+		}
 	}
 }
 
@@ -61,8 +78,12 @@ int HttpServer::acceptConnections()
 	int client_fd;
 
 	if ((client_fd = accept(_socket_fd, (struct sockaddr *)&client_addr, (socklen_t *)&addr_len)) < 0)
-		errorHandler("accept");
+	{
+		logMessage(ERROR, "Error accepting client connection. Continuing...", NULL);
+		return -1;
+	}
 	_client_info[client_fd].addr = client_addr;
+	logMessage(INFO, "New client connected.", &_client_info[client_fd]);
 	return client_fd;
 }
 
@@ -72,18 +93,19 @@ void HttpServer::handleRequest(int client_fd)
 	ClientInfo &info = _client_info[client_fd];
 	_client_info[client_fd].fd = client_fd;
 	parseRequest(info);
-	std::string body = extractBody(info);
-	sendHttpResponse(client_fd, 200, "OK", body);
+	executeResponse(info);
 }
 
 //parse request to map<int client_fd, struct ClientInfo>
 void HttpServer::parseRequest(ClientInfo& info)
 {
-	info.info.request = readRequest(info);
+	std::string &req = info.info.request;
+
+	req = readRequest(info);
 	if (_debug)
 	{
 		std::cout << "--------Reading-Request-----------------"<< std::endl;
-		std::cout << info.info.request << std::endl;
+		std::cout << req << std::endl;
 		std::cout << "--------------------------"<< std::endl;
 	}
 	parseRequestLine(info);
@@ -105,50 +127,53 @@ std::string HttpServer::readRequest(ClientInfo &info)
 
 void HttpServer::parseRequestLine(ClientInfo& info)
 {
-	int i = info.info.request.find(' ');
-	std::string method = info.info.request.substr(0, i);
+	std::string &req = info.info.request;
+
+	int i = req.find(' ');
+	std::string method = req.substr(0, i);
 	if (method != "GET" && method != "POST" && method != "PUT" && method != "DELETE")
 	{
 		std::string body = parseFileToString("var/www/html/error_pages/405.html");
 		sendHttpResponse(info.fd, 405, "Method Not Allowed", body);
 		closeConnection(info.fd);
 	}
-	info.info.request = info.info.request.substr(i+1, info.info.request.size());
-	i = info.info.request.find(' ');
-	std::string path = info.info.request.substr(0, i);
+	req = req.substr(i+1, req.size());
+	i = req.find(' ');
+	std::string path = req.substr(0, i);
 	if (!pathExists(path))
 	{
 		std::string body = parseFileToString("var/www/html/error_pages/404.html");
 		sendHttpResponse(info.fd, 404, "Not Found", body);
 		closeConnection(info.fd);
 	}
-	info.info.request = info.info.request.substr(i+1, info.info.request.size());
-	i = info.info.request.find('\r');
-	std::string http_version = info.info.request.substr(0, i);
+	req = req.substr(i+1, req.size());
+	i = req.find('\r');
+	std::string http_version = req.substr(0, i);
 	if (http_version != "HTTP/1.1")
 	{
 		std::string body = parseFileToString("var/www/html/error_pages/505.html");
 		sendHttpResponse(info.fd, 505, "HTTP Version Not Supported", body);
 		closeConnection(info.fd);
 	}
-	_client_info[info.fd].info.method = method;
+	_client_info[info.fd].info.method = getMethod(method);
 	_client_info[info.fd].info.path = path;
 	_client_info[info.fd].info.http_version = http_version;
-	info.info.request = info.info.request.substr(i+2, info.info.request.size());
+	req = req.substr(i+2, req.size());
 }
 
 
 void HttpServer::parseRequestHeader(ClientInfo& info)
 {
-	int i;
+	std::string &req = info.info.request;
+
 	while (true)
 	{
-		if (info.info.request[0] == '\r')
+		if (req[0] == '\r')
 			break;
-		std::string key = info.info.request.substr(0, info.info.request.find(':'));
-		info.info.request = info.info.request.substr(info.info.request.find(':') + 2, info.info.request.size());
-		std::string val = info.info.request.substr(0, info.info.request.find('\r'));
-		info.info.request = info.info.request.substr(info.info.request.find('\r') + 2, info.info.request.size());
+		std::string key = req.substr(0, req.find(':'));
+		req = req.substr(req.find(':') + 2, req.size());
+		std::string val = req.substr(0, req.find('\r'));
+		req = req.substr(req.find('\r') + 2, req.size());
 		if (key.empty() == true || val.empty() == true)
 		{
 			//todo
@@ -161,19 +186,34 @@ void HttpServer::parseRequestHeader(ClientInfo& info)
 }
 void HttpServer::parseRequestBody(ClientInfo& info)
 {
-	if (info.info.request.size() == 2)
+	std::string &req = info.info.request;
+
+	if (req.size() == 2)
 		return;
-	info.info.body = info.info.request.substr(2, info.info.request.size());
-	info.info.request.clear();
+	info.info.body = req.substr(2, req.size());
+	req.clear();
 }
 
-int HttpServer::checkRequest(std::string &msg)
+void HttpServer::executeResponse(ClientInfo &info)
 {
-	return 0;
-}
-void HttpServer::executeResponse()
-{
-	return;
+	Methods meth = info.info.method;
+	if (meth == GET)
+	{
+		std::string body = extractBody(info);
+		sendHttpResponse(info.fd, 200, "OK", body);
+	}
+	else if (meth == POST)
+	{
+		
+	}
+	else if (meth == DELETE)
+	{
+		
+	}
+	else if (meth == PUT)
+	{
+		
+	}
 }
 
 void HttpServer::sendHttpResponse(int fd, int status_code, const char *msg, std::string &body)
