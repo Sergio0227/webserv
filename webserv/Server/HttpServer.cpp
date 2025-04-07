@@ -225,6 +225,9 @@ void HttpServer::parseRequestBody(ClientInfo& info)
 }
 
 //Depending on the method, the server sends a response back
+//GET: if path or dir exists, if dir -> add index.html, if file doesnt exist send 404, else send html back with 200 ok
+//POST: email already exists send 409 Conflict, else save credentials in csv and send 201 created
+//PUT: 
 void HttpServer::executeResponse(ClientInfo &info)
 {
 	Methods meth = info.info.method;
@@ -238,17 +241,27 @@ void HttpServer::executeResponse(ClientInfo &info)
 	}
 	else if (meth == POST)
 	{
-		//if email already exists send 409 Conflict
-		if (emailExists(info))
+		if (info.info.path == "/request")
 		{
-			info.status_code = 409, info.close_connection = true;
-			return ;
+			if (emailExists(info))
+			{
+				info.status_code = 409, info.close_connection = true;
+				return ;
+			}
+			info.status_code = 201;
+			info.status_msg = "Created";
+			std::string body = parseFileToString("var/www/html/accountCreated.html");
+			sendHttpResponse(info, info.status_msg.c_str(), body, NULL);
+			storeCredential(info.info.body, "var/www/data/users.csv");
 		}
-		info.status_code = 201;
-		info.status_msg = "Created";
-		std::string body = parseFileToString("var/www/html/accountCreated.html");
-		sendHttpResponse(info, info.status_msg.c_str(), body, NULL);
-		storeCredential(info.info.body, "var/www/data/users.csv");
+		else if (info.info.path == "/login")
+		{
+			if (!emailExists(info) || !passwordCorrect(info.info.body))
+			{
+				info.status_code = 401, info.close_connection = true;
+				return ;
+			}
+		}
 	}
 	else if (meth == DELETE)
 	{
@@ -308,6 +321,8 @@ bool HttpServer::pathExists(std::string &path)
 {
 	std::string full_path(root_path);
 	full_path += path;
+	if (path == "/register" || path == "/login")
+		return true;
 	if (!access(full_path.c_str(), F_OK))
 		return true;
 	else return false;

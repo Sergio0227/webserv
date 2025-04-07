@@ -136,7 +136,9 @@ Methods getEnumMethod(std::string &method);
 
 bool	emailExists(ClientInfo &info);
 
-void storeCredential(BodyInfo body, const char *name);
+bool passwordCorrect(BodyInfo &body);
+
+void storeCredential(BodyInfo &body, const char *name);
 
 std::string decodeUrl(const std::string &encoded);
 

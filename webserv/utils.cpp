@@ -135,6 +135,7 @@ std::string getStatusMessage(int code)
 	status_map[409] = "Conflict";
 	status_map[200] = "OK";
 	status_map[201] = "Created";
+	status_map[401] = "Unauthorized";
     if (status_map.find(code) != status_map.end())
 		return status_map[code];
 	else
@@ -161,11 +162,33 @@ bool emailExists(ClientInfo &info)
 	return false;
 }
 
-void storeCredential(BodyInfo body, const char *name)
+bool passwordCorrect(BodyInfo &body)
+{
+	std::fstream file("var/www/data/users.csv", std::ios::in);
+	std::string line;
+
+	if (!file.is_open())
+		return false;
+	while (getline(file, line))
+	{
+		std::string csv_passw = line.substr(line.find(',') + 1);
+		std::string csv_email = line.substr(0, line.find(','));
+		if (csv_email == body.email)
+		{
+			if (csv_passw == body.passw)
+				return true;
+		}
+	}
+	file.close();
+	return false;
+}
+
+void storeCredential(BodyInfo &body, const char *name)
 {
 	std::fstream file(name, std::ios::out | std::ios::app);
 	file << body.email << "," << body.passw << "\n";
 	file.close();
+	
 }
 
 std::string decodeUrl(const std::string &encoded)
