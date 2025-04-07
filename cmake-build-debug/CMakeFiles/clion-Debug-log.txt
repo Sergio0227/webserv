@@ -1,6 +1,6 @@
-/app/extra/clion/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles" -S /home/sandre-a/42_cursus/webserv -B /home/sandre-a/42_cursus/webserv/cmake-build-debug
--- The C compiler identification is GNU 14.2.0
--- The CXX compiler identification is GNU 14.2.0
+/snap/clion/332/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/snap/clion/332/bin/ninja/linux/x64/ninja -G Ninja -S /home/sergio/42/webserv -B /home/sergio/42/webserv/cmake-build-debug
+-- The C compiler identification is GNU 13.3.0
+-- The CXX compiler identification is GNU 13.3.0
 -- Detecting C compiler ABI info
 -- Detecting C compiler ABI info - done
 -- Check for working C compiler: /usr/bin/cc - skipped
@@ -11,6 +11,6 @@
 -- Check for working CXX compiler: /usr/bin/c++ - skipped
 -- Detecting CXX compile features
 -- Detecting CXX compile features - done
--- Configuring done (0.3s)
+-- Configuring done (0.9s)
 -- Generating done (0.0s)
--- Build files have been written to: /home/sandre-a/42_cursus/webserv/cmake-build-debug
+-- Build files have been written to: /home/sergio/42/webserv/cmake-build-debug

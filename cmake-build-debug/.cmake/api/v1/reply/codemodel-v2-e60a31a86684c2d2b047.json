@@ -49,8 +49,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/sandre-a/42_cursus/webserv/cmake-build-debug",
-		"source" : "/home/sandre-a/42_cursus/webserv"
+		"build" : "/home/sergio/42/webserv/cmake-build-debug",
+		"source" : "/home/sergio/42/webserv"
 	},
 	"version" : 
 	{
