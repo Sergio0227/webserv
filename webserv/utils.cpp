@@ -167,3 +167,27 @@ void storeCredential(BodyInfo body, const char *name)
 	file << body.email << "," << body.passw << "\n";
 	file.close();
 }
+
+std::string decodeUrl(const std::string &encoded)
+{
+	std::string decoded;
+	size_t j = 0;
+	size_t i = 0;
+	std::cout << encoded << std::endl;
+	while(i < encoded.size())
+	{
+		if (encoded[i] == '%' && i+2 < encoded.size())
+		{
+			int int_decode;
+			std::stringstream ss;
+			ss << std::hex << encoded.substr(i + 1, 2);
+			ss >> int_decode;
+			decoded[j++] = static_cast<char>(int_decode);
+			i += 2;
+		}
+		else
+			decoded[j++] = encoded[i];
+		i++;
+	}
+	return decoded;
+}

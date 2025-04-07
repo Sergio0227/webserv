@@ -138,6 +138,8 @@ bool	emailExists(ClientInfo &info);
 
 void storeCredential(BodyInfo body, const char *name);
 
+std::string decodeUrl(const std::string &encoded);
+
 std::string getStringMethod(Methods method);
 
 std::string getCurrentTime();

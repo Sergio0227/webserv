@@ -215,7 +215,9 @@ void HttpServer::parseRequestBody(ClientInfo& info)
 	req.clear();
 	if (info.info.headers["Content-Type"] == "application/x-www-form-urlencoded")
 	{
-		info.info.body.email = body_ref.substr(body_ref.find("email=") + 6, body_ref.find('&'));
+		int start = body_ref.find("email=") + 6;
+		int end = body_ref.find('&') - start;
+		info.info.body.email = body_ref.substr(start, end);
 		info.info.body.passw = body_ref.substr(body_ref.find("password=") + 9, body_ref.size());
 	}
 	else
