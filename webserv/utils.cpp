@@ -136,6 +136,7 @@ std::string getStatusMessage(int code)
 	status_map[200] = "OK";
 	status_map[201] = "Created";
 	status_map[401] = "Unauthorized";
+	status_map[303] = "See Other";
     if (status_map.find(code) != status_map.end())
 		return status_map[code];
 	else
@@ -186,9 +187,13 @@ bool passwordCorrect(BodyInfo &body)
 void storeCredential(BodyInfo &body, const char *name)
 {
 	std::fstream file(name, std::ios::out | std::ios::app);
+	if (!file.is_open())
+	{
+		std::cerr << "Error: Could not open file for writing\n";
+		return ;
+	}
 	file << body.email << "," << body.passw << "\n";
 	file.close();
-	
 }
 
 std::string decodeUrl(const std::string &encoded)

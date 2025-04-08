@@ -124,6 +124,7 @@ std::string HttpServer::readRequest(ClientInfo &info)
 	if (bytes_read < 0)
 		throw std::runtime_error("No Request send.");
 	buffer[bytes_read] = '\0';
+	//std::cout << "Request read: " << buffer << std::endl; //uncomment this to see raw request from client
 	return (std::string(buffer));
 }
 
@@ -241,17 +242,18 @@ void HttpServer::executeResponse(ClientInfo &info)
 	}
 	else if (meth == POST)
 	{
-		if (info.info.path == "/request")
+		if (info.info.path == "/register")
 		{
 			if (emailExists(info))
 			{
 				info.status_code = 409, info.close_connection = true;
 				return ;
 			}
-			info.status_code = 201;
-			info.status_msg = "Created";
-			std::string body = parseFileToString("var/www/html/accountCreated.html");
-			sendHttpResponse(info, info.status_msg.c_str(), body, NULL);
+			info.status_code = 303;
+			info.status_msg = "See Other";
+			info.close_connection = true;
+			std::string empty_string = "";
+			sendHttpResponse(info, info.status_msg.c_str(), empty_string, "/login.html");
 			storeCredential(info.info.body, "var/www/data/users.csv");
 		}
 		else if (info.info.path == "/login")
@@ -261,6 +263,7 @@ void HttpServer::executeResponse(ClientInfo &info)
 				info.status_code = 401, info.close_connection = true;
 				return ;
 			}
+			
 		}
 	}
 	else if (meth == DELETE)
@@ -294,6 +297,7 @@ void HttpServer::sendHttpResponse(ClientInfo &info, const char *msg, std::string
 		response += "Location: " + std::string(location) + "\r\n";
 	response += "\r\n";
 	response += body;
+	//std::cout << "Response: " << response << std::endl; //uncomment this to see full raw response from server
 	int bytes_sent = send(info.fd, response.c_str(), response.size(), 0);
 	if (bytes_sent < 0)
 		std::runtime_error("send error");
