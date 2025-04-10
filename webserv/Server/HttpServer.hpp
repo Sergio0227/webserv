@@ -1,9 +1,11 @@
 #pragma once
 #include "Socket.hpp"
+#include "Config.hpp"
 
 class HttpServer : public Socket
 {
 	private:
+		Config  *_config;
 		int		_backlog;
 		bool	_debug;
 		fd_set _cur_sockets, _rdy_sockets;
@@ -35,6 +37,6 @@ class HttpServer : public Socket
 		bool pathExists(std::string &path);
 	
 	public:
-		HttpServer(int domain, int type, int protocol, int port, std::string &ip, int backlog, bool debug);
+		HttpServer(int domain, int type, int protocol, int port, std::string &ip, int backlog, bool debug, std::vector<std::string> config_section);
 		~HttpServer();
 };

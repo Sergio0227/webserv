@@ -129,6 +129,7 @@ struct ClientInfo
 	RequestInfo	info;
 };
 
+std::string trim(const std::string& str);
 void		logMessage(LogType level, const std::string& message, ClientInfo *ptr_info, int flag);
 void		printClientInfo(ClientInfo &info);
 

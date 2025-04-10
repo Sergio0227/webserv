@@ -1,11 +1,9 @@
 # include "HttpServer.hpp"
 
-HttpServer::HttpServer()
-{}
 
-HttpServer::HttpServer(int domain, int type, int protocol, int port, std::string &ip, int backlog, bool debug) : Socket(domain, type, protocol, port, ip) 
+HttpServer::HttpServer(int domain, int type, int protocol, int port, std::string &ip, int backlog, bool debug, std::vector<std::string> config_section) : Socket(domain, type, protocol, port, ip)
 {
-
+	this->_config = new Config(config_section);
 	//init serverStruct
 	root_path = "var/www/html";
 

@@ -1,12 +1,13 @@
 
 CLIENT_SRC = Client/Client.cpp Socket/Socket.cpp main_client.cpp utils.cpp
-SERVER_SRC = Server/HttpServer.cpp Socket/Socket.cpp main_server.cpp utils.cpp
+SERVER_SRC = Server/HttpServer.cpp Socket/Socket.cpp Config/Config.cpp main_server.cpp utils.cpp
 CLIENT_OBJ = $(CLIENT_SRC:.cpp=.o)
 SERVER_OBJ = $(SERVER_SRC:.cpp=.o)
 CLIENT_EXEC = client
 SERVER_EXEC = server
 CFLAGS		= -Werror -Wall -Wextra
-CPPFLAGS	= -std=c++98 -I./Socket -I./Client -I./Server -I.
+CPPFLAGS	= -std=c++98
+INCLUDES	= -I./Socket -I./Client -I./Server -I./Config -I.
 CC			= c++
 RM			= rm -rf
 
@@ -32,7 +33,7 @@ $(SERVER_EXEC): $(SERVER_OBJ)
 
 %.o: %.cpp
 	@echo "Compiling $< with flags \"${CFLAGS}\" and \"${CPPFLAGS}\""
-	@${CC} ${CFLAGS} ${CPPFLAGS} -c $< -o $@
+	@${CC} ${CFLAGS} ${CPPFLAGS} ${INCLUDES} -c $< -o $@
 	@echo "$(GREEN)Compilation of $< success$(DEF_COLOR)"
 
 clean:
