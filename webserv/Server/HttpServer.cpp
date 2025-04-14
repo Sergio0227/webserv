@@ -94,11 +94,19 @@ void HttpServer::handleRequest(int client_fd)
 	info.fd = client_fd;
 	info.close_connection = false;
 	parseRequest(info);
+	if (info.file_uploaded)
+	{
+		info.reset();
+		return;
+	}
 	if (!info.close_connection)
 		executeResponse(info);
-	else if (_debug)
-		logMessage(DEBUG, "Client request failed.", &info, 0);
-	handleErrorResponse(info);
+	if (info.close_connection)
+	{
+		if (_debug)
+			logMessage(DEBUG, "Client request failed.", &info, 0);
+		handleErrorResponse(info);
+	}
 }
 
 //parse request to map<int client_fd, struct ClientInfo>
@@ -107,6 +115,8 @@ void HttpServer::parseRequest(ClientInfo& info)
 	std::string &req = info.info.request;
 
 	req = readRequest(info);
+	if (req == "")
+		return;
 	parseRequestLine(info);
 	if (info.close_connection) return ;
 	parseRequestHeader(info);
@@ -119,13 +129,22 @@ void HttpServer::parseRequest(ClientInfo& info)
 //todo error function for recv
 std::string HttpServer::readRequest(ClientInfo &info)
 {
-	char buffer[1024];
+	char buffer[10000];
+	std::string res;
 	int bytes_read = recv(info.fd, buffer, sizeof(buffer) - 1, 0);
+	res.append(buffer, bytes_read);
 	if (bytes_read < 0)
-		throw std::runtime_error("No Request send.");
-	buffer[bytes_read] = '\0';
-	//std::cout << "Request read: " << buffer << std::endl; //uncomment this to see raw request from client
-	return (std::string(buffer));
+		throw std::runtime_error("Error: recv");
+	//std::cout << "Request read: " << res << std::endl; //uncomment this to see raw request from client
+	if (!info.info.boundary.empty() && res.find(info.info.boundary) == 2) //starts with -- so == 2 // this is a way to tell the server that the data send from the client is a multidata, because first the headers are send then the data
+	{
+		//here it knows its the picture data
+		uploadFile(res, info.info.boundary, "var/www/data/images");
+		info.file_uploaded = true;
+		return "";
+
+	}
+	return (res);
 }
 
 //parses method, path, version, and checks for errors
@@ -147,8 +166,6 @@ void HttpServer::parseRequestLine(ClientInfo& info)
 	{
 		info.status_code = 404, info.close_connection = true;
 		return ;
-		
-		closeConnection(info.fd);
 	}
 	req = req.substr(i+1, req.size());
 	i = req.find('\r');
@@ -201,6 +218,11 @@ void HttpServer::parseRequestHeader(ClientInfo& info)
 		}
 		info.info.headers[key] = val;
 	}
+	if (info.info.headers["Content-Type"].find("multipart/form-data") != std::string::npos)
+	{
+		size_t pos = info.info.headers["Content-Type"].find("boundary=") + 9;
+		info.info.boundary = info.info.headers["Content-Type"].substr(pos, info.info.headers["Content-Type"].size());
+	}
 }
 
 //only x-www-form-urlencoded is allowed on this webserver
@@ -209,8 +231,12 @@ void HttpServer::parseRequestBody(ClientInfo& info)
 {
 	std::string &req = info.info.request;
 	std::string &body_ref = info.info.body.body_str;
-
-	if (req.size() == 2)
+	// std::cout << "bodystr: " << body_ref << std::endl;
+	// std::cout << "cont type: " << info.info.headers["Content-Type"] << std::endl;
+	// std::cout << "cont len: " << info.info.headers["Content-Length"] << std::endl;
+	// std::cout << "req size: " << req.size() << std::endl;
+	// std::cout << "req size: " << req << std::endl;
+	if (info.info.headers["Content-Length"] == "0" || req.size() == 2)
 		return;
 	body_ref = req.substr(2, req.size());
 	req.clear();
@@ -224,11 +250,11 @@ void HttpServer::parseRequestBody(ClientInfo& info)
 	else
 		info.status_code = 415, info.close_connection = true;
 }
-
 //Depending on the method, the server sends a response back
 //GET: if path or dir exists, if dir -> add index.html, if file doesnt exist send 404, else send html back with 200 ok
-//POST: email already exists send 409 Conflict, else save credentials in csv and send 201 created
-//PUT: 
+//POST: email already exists send 409 Conflict, else save credentials in csv and send 301 redirect to login
+//PUT: updates a password
+//DELETE: deletes an account if user is logged in
 void HttpServer::executeResponse(ClientInfo &info)
 {
 	Methods meth = info.info.method;
@@ -251,7 +277,6 @@ void HttpServer::executeResponse(ClientInfo &info)
 			}
 			info.status_code = 303;
 			info.status_msg = "See Other";
-			info.close_connection = true;
 			std::string empty_string = "";
 			sendHttpResponse(info, info.status_msg.c_str(), empty_string, "/login.html");
 			storeCredential(info.info.body, "var/www/data/users.csv");
@@ -263,7 +288,17 @@ void HttpServer::executeResponse(ClientInfo &info)
 				info.status_code = 401, info.close_connection = true;
 				return ;
 			}
-			
+			info.status_code = 303;
+			info.status_msg = "See Other";
+			std::string empty_string = "";
+			sendHttpResponse(info, info.status_msg.c_str(), empty_string, "/user.html");
+		}
+		else if (info.info.path == "/upload")
+		{
+			info.status_code = 201;
+			info.status_msg = "Created";
+			std::string empty_string = "";
+			sendHttpResponse(info, info.status_msg.c_str(), empty_string, NULL);
 		}
 	}
 	else if (meth == DELETE)
@@ -325,7 +360,7 @@ bool HttpServer::pathExists(std::string &path)
 {
 	std::string full_path(root_path);
 	full_path += path;
-	if (path == "/register" || path == "/login")
+	if (path == "/register" || path == "/login" || path == "/upload")
 		return true;
 	if (!access(full_path.c_str(), F_OK))
 		return true;
@@ -334,11 +369,11 @@ bool HttpServer::pathExists(std::string &path)
 
 void HttpServer::closeConnection(int fd)
 {
-	close(fd);
-	FD_CLR(fd, &_cur_sockets);
-	_client_info.erase(fd);
 	if (_debug)
 		logMessage(DEBUG, "Connection closed", &_client_info[fd], 0);
+	_client_info.erase(fd);
+	close(fd);
+	FD_CLR(fd, &_cur_sockets);
 }
 
 std::string HttpServer::extractBody(ClientInfo& info)
@@ -352,4 +387,25 @@ std::string HttpServer::extractBody(ClientInfo& info)
 	else
 		fullpath += info.info.path;
 	return (parseFileToString(fullpath.c_str()));
+}
+void HttpServer::uploadFile(std::string data, std::string &boundary, const char *path)
+{
+	size_t start = data.find("filename=\"") + 10;
+	size_t end = data.find("\"", start);
+	std::string filename = data.substr(start, end - start);
+	std::string fullPath = path + std::string("/") + filename;
+	
+	//std::cout << fullPath << std::endl;
+
+	start = data.find("\r\n\r\n") + 4;
+	end = data.find(boundary, start) - 4;	//-2: "--" +(-2): "\r\n" = 4
+	std::string binary_data = data.substr(start, end - start);
+
+	// todo if name exist send error
+	std::fstream output(fullPath.c_str(), std::ios::binary | std::ios::out);
+	
+	if (!output.is_open())
+		return;
+	output.write(binary_data.data(), binary_data.size());
+	output.close();
 }

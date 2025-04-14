@@ -13,6 +13,9 @@ Socket::Socket(int domain, int type, int protocol, int port, std::string &ip)
 	_socket_fd = socket(domain, type, protocol);
 	if (_socket_fd < 0)
 		errorHandler("Socket");
+	int optval = 1;
+	if (setsockopt(_socket_fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) < 0)
+		errorHandler("Setsockopt");
 }
 
 Socket::~Socket()

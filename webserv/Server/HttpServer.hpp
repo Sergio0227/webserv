@@ -29,7 +29,9 @@ class HttpServer : public Socket
 		int		acceptConnections();
 
 		std::string	extractBody(ClientInfo &info);
-		std::string	readRequest(ClientInfo &info);
+		void uploadFile(std::string data, std::string &boundary, const char *path);
+		std::string readRequest(ClientInfo &info);
+		std::string readRequestPOST(ClientInfo &info);
 		std::string parseFileToString(const char *filename);
 
 		bool pathExists(std::string &path);
@@ -38,3 +40,5 @@ class HttpServer : public Socket
 		HttpServer(int domain, int type, int protocol, int port, std::string &ip, int backlog, bool debug);
 		~HttpServer();
 };
+
+

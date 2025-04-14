@@ -106,6 +106,7 @@ struct BodyInfo
 	std::string	body_str;
 	std::string	email;
 	std::string	passw;
+	void reset();
 };
 struct RequestInfo
 {
@@ -116,6 +117,8 @@ struct RequestInfo
 
 	BodyInfo							body;
 	std::map<std::string, std::string>	headers;
+	std::string boundary;
+	void reset();
 };
 struct ClientInfo
 {
@@ -127,6 +130,8 @@ struct ClientInfo
 	time_t		connection_time;
     bool		keep_alive;
 	RequestInfo	info;
+	bool file_uploaded;
+	void reset();
 };
 
 void		logMessage(LogType level, const std::string& message, ClientInfo *ptr_info, int flag);

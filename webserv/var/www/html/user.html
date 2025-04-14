@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>User Dashboard</title>
+	<script>
+		function deleteAccount()
+		{
+			if (confirm('Are you sure you want to delete your account? This cannot be undone.'))
+			{
+				fetch('/delete-account',
+				{
+					method: 'DELETE',
+				})
+				.then(response =>
+				{
+					if (response.ok)
+					{
+						alert('Account deleted successfully');
+						window.location.href = '/';
+					}
+					else
+					{
+						alert('Failed to delete account');
+					}
+				})
+				.catch(error =>
+				{
+					console.error('Error:', error);
+					alert('An error occurred while deleting the account');
+				});
+			}
+		}
+		function uploadFile()
+		{
+			var fileInput = document.getElementById('fileInput');
+			var file = fileInput.files[0];
+
+			if (file)
+			{
+				var formData = new FormData();
+				formData.append('file', file);
+				fetch('/upload',
+				{
+					method: 'POST',
+					body: formData,
+				})
+				.then(response =>
+				{
+					if (response.ok) {
+						alert('File uploaded successfully!');
+					}
+					else
+					{
+						alert('Failed to upload file');
+					}
+				})
+				.catch(error =>
+				{
+					console.error('Error:', error);
+					alert('An error occurred during the file upload');
+				});
+			}
+			else
+			{
+				alert('Please select a file to upload');
+			}
+		}
+    </script>
+</head>
+<body>
+	<h2>Login successfull!</h2>
+	<a href="/"><button type="button">Home</button></a>
+	<a href="/change-password"><button type="button">Change Password</button></a>
+	<button type="button" style="color: red;" onclick="deleteAccount()">Delete Account</button>
+
+	<h3>Upload a Picture (PNG, JPG, JPEG)</h3>
+	<input type="file" id="fileInput" accept=".png, .jpg, .jpeg" />
+	<button type="button" onclick="uploadFile()">Upload</button>
+</body>
+</html>
