@@ -59,6 +59,19 @@ void HttpServer::handleIncomingConnections()
 			{
 				if (i == _socket_fd)
 				{
+					//another class should handle this function like this: 
+					/*
+						int client_fd = _servers[i].accept();
+						if (client_fd > 0)
+						{
+							FD_SET(client_fd, &_fd_set);
+							_clients[client_fd] = &_servers[i]; // associate client with Server!
+						}
+						else if (_clients.count(i)) // i is a client socket
+						{
+							Server* server = _clients[i];
+							server->handleRequest(i);
+					*/
 					int client_fd = acceptConnections();
 					if (client_fd < 0)
 						continue;
@@ -88,15 +101,17 @@ int HttpServer::acceptConnections()
 }
 
 //parse request to methods, based on method execute response or handle error
+
 void HttpServer::handleRequest(int client_fd)
 {
 	ClientInfo &info = _client_info[client_fd];
 	info.fd = client_fd;
 	info.close_connection = false;
-	parseRequest(info);
+
+	readRequest(info);
+	info.info.request.clear();
 	if (info.file_uploaded)
 	{
-		info.reset();
 		return;
 	}
 	if (!info.close_connection)
@@ -107,44 +122,52 @@ void HttpServer::handleRequest(int client_fd)
 			logMessage(DEBUG, "Client request failed.", &info, 0);
 		handleErrorResponse(info);
 	}
+	//info.reset();
 }
 
-//parse request to map<int client_fd, struct ClientInfo>
-void HttpServer::parseRequest(ClientInfo& info)
-{
-	std::string &req = info.info.request;
-
-	req = readRequest(info);
-	if (req == "")
-		return;
-	parseRequestLine(info);
-	if (info.close_connection) return ;
-	parseRequestHeader(info);
-	if (info.close_connection) return ;
-	parseRequestBody(info);
-	if (info.close_connection) return ;
-}
-
-//reads request and return string
+//reads request and parses request to map<int client_fd, struct ClientInfo>
 //todo error function for recv
-std::string HttpServer::readRequest(ClientInfo &info)
+void HttpServer::readRequest(ClientInfo &info)
 {
-	char buffer[10000];
-	std::string res;
-	int bytes_read = recv(info.fd, buffer, sizeof(buffer) - 1, 0);
-	res.append(buffer, bytes_read);
-	if (bytes_read < 0)
-		throw std::runtime_error("Error: recv");
-	//std::cout << "Request read: " << res << std::endl; //uncomment this to see raw request from client
-	if (!info.info.boundary.empty() && res.find(info.info.boundary) == 2) //starts with -- so == 2 // this is a way to tell the server that the data send from the client is a multidata, because first the headers are send then the data
-	{
-		//here it knows its the picture data
-		uploadFile(res, info.info.boundary, "var/www/data/images");
-		info.file_uploaded = true;
-		return "";
+	char buffer[1024];
+	int bytes_read;
+	size_t body_size;
+	size_t total_read = 0;
 
+	while (true)
+	{
+		bytes_read = recv(info.fd, buffer, sizeof(buffer) - 1, 0);
+		if (bytes_read < 0)
+			throw std::runtime_error("Error: recv");
+		if (bytes_read == 0)
+			break;
+		buffer[bytes_read] = '\0';
+		info.info.request.append(buffer, bytes_read);
+		if (info.info.request.find("\r\n\r\n") != std::string::npos)
+		{
+			parseRequestLine(info);
+			if (info.close_connection)
+				return ;
+			body_size = parseRequestHeader(info);
+			if (info.close_connection || body_size == 0)
+				return ;
+			total_read = info.info.request.size() - 2;
+			break;
+		}
 	}
-	return (res);
+	while (total_read < body_size)
+	{
+		bytes_read = recv(info.fd, buffer, sizeof(buffer) - 1, 0);
+		if (bytes_read < 0)
+			throw std::runtime_error("Error: recv");
+		if (bytes_read == 0)
+			break;
+		buffer[bytes_read] = '\0';
+		info.info.request.append(buffer, bytes_read);
+		total_read += bytes_read;
+	}
+	//std::cout << "Request read: " << info.info.request << std::endl; //uncomment this to see raw request body from client
+	parseRequestBody(info);
 }
 
 //parses method, path, version, and checks for errors
@@ -199,7 +222,7 @@ void HttpServer::handleErrorResponse(ClientInfo &info)
 }
 
 //parses the Client-Request-Header to a map<string, string>
-void HttpServer::parseRequestHeader(ClientInfo& info)
+size_t HttpServer::parseRequestHeader(ClientInfo& info)
 {
 	std::string &req = info.info.request;
 
@@ -214,7 +237,7 @@ void HttpServer::parseRequestHeader(ClientInfo& info)
 		if (key.empty() == true || val.empty() == true)
 		{
 			info.status_code = 400, info.close_connection = true;
-			return ;
+			return 0;
 		}
 		info.info.headers[key] = val;
 	}
@@ -223,21 +246,19 @@ void HttpServer::parseRequestHeader(ClientInfo& info)
 		size_t pos = info.info.headers["Content-Type"].find("boundary=") + 9;
 		info.info.boundary = info.info.headers["Content-Type"].substr(pos, info.info.headers["Content-Type"].size());
 	}
+	if (info.info.headers.find("Content-Length") != info.info.headers.end())
+		return (std::atoi(info.info.headers["Content-Length"].c_str()));
+	else
+		return 0;
 }
 
-//only x-www-form-urlencoded is allowed on this webserver
+//only x-www-form-urlencoded and multidata is allowed on this webserver
 //parses body into email and passw
 void HttpServer::parseRequestBody(ClientInfo& info)
 {
 	std::string &req = info.info.request;
 	std::string &body_ref = info.info.body.body_str;
-	// std::cout << "bodystr: " << body_ref << std::endl;
-	// std::cout << "cont type: " << info.info.headers["Content-Type"] << std::endl;
-	// std::cout << "cont len: " << info.info.headers["Content-Length"] << std::endl;
-	// std::cout << "req size: " << req.size() << std::endl;
-	// std::cout << "req size: " << req << std::endl;
-	if (info.info.headers["Content-Length"] == "0" || req.size() == 2)
-		return;
+
 	body_ref = req.substr(2, req.size());
 	req.clear();
 	if (info.info.headers["Content-Type"] == "application/x-www-form-urlencoded")
@@ -246,6 +267,11 @@ void HttpServer::parseRequestBody(ClientInfo& info)
 		int end = body_ref.find('&') - start;
 		info.info.body.email = body_ref.substr(start, end);
 		info.info.body.passw = body_ref.substr(body_ref.find("password=") + 9, body_ref.size());
+	}
+	else if (info.info.headers["Content-Type"].find("multipart/form-data") != std::string::npos)
+	{
+		uploadFile(info, body_ref, "var/www/data/images");
+		info.file_uploaded = true;
 	}
 	else
 		info.status_code = 415, info.close_connection = true;
@@ -388,17 +414,15 @@ std::string HttpServer::extractBody(ClientInfo& info)
 		fullpath += info.info.path;
 	return (parseFileToString(fullpath.c_str()));
 }
-void HttpServer::uploadFile(std::string data, std::string &boundary, const char *path)
+void HttpServer::uploadFile(ClientInfo &info, std::string data, const char *path)
 {
 	size_t start = data.find("filename=\"") + 10;
 	size_t end = data.find("\"", start);
 	std::string filename = data.substr(start, end - start);
 	std::string fullPath = path + std::string("/") + filename;
-	
-	//std::cout << fullPath << std::endl;
 
 	start = data.find("\r\n\r\n") + 4;
-	end = data.find(boundary, start) - 4;	//-2: "--" +(-2): "\r\n" = 4
+	end = data.find(info.info.boundary, start) - 4;	//-2: "--" +(-2): "\r\n" = 4
 	std::string binary_data = data.substr(start, end - start);
 
 	// todo if name exist send error
@@ -408,4 +432,30 @@ void HttpServer::uploadFile(std::string data, std::string &boundary, const char 
 		return;
 	output.write(binary_data.data(), binary_data.size());
 	output.close();
+	executeResponse(info);
+}
+
+void serveImage(int client_fd, const std::string& filePath)
+{
+	std::ifstream image(filePath.c_str(), std::ios::binary);
+	if (!image.is_open())
+	{
+		//send 404
+		return;
+	}
+	std::ostringstream oss;
+	oss << image.rdbuf();
+	std::string data = oss.str();
+	oss.str("");
+	oss.clear();
+	oss << data.size();
+	std::string response = "HTTP/1.1 200 OK\r\n";
+	response += "Content-Type: image/png\r\n";
+	response += "Content-Length: " + oss.str() + "\r\n";
+	response += "Connection: close\r\n";
+	response += "\r\n";
+
+	send(client_fd, response.c_str(), response.size(), 0);
+	send(client_fd, data.c_str(), data.size(), 0);
+	image.close();
 }

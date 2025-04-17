@@ -16,9 +16,8 @@ class HttpServer : public Socket
 
 		HttpServer();
 		void	handleIncomingConnections();
-		void	parseRequest(ClientInfo &info);
 		void	parseRequestLine(ClientInfo &info);
-		void	parseRequestHeader(ClientInfo &info);
+		size_t	parseRequestHeader(ClientInfo &info);
 		void	parseRequestBody(ClientInfo &info);
 		void	handleErrorResponse(ClientInfo &info);
 		void	executeResponse(ClientInfo &info);
@@ -29,8 +28,8 @@ class HttpServer : public Socket
 		int		acceptConnections();
 
 		std::string	extractBody(ClientInfo &info);
-		void uploadFile(std::string data, std::string &boundary, const char *path);
-		std::string readRequest(ClientInfo &info);
+		void uploadFile(ClientInfo &info, std::string data, const char *path);
+		void readRequest(ClientInfo &info);
 		std::string readRequestPOST(ClientInfo &info);
 		std::string parseFileToString(const char *filename);
 
