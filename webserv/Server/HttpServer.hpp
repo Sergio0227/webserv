@@ -24,11 +24,13 @@ class HttpServer : public Socket
 		void sendHttpResponse(ClientInfo &info, const char *msg, std::string &body, const char *location);
 		void	handleRequest(int client_fd);
 		void	closeConnection(int fd);
+		void serveImage(int client_fd, const std::string &filePath);
 		
 		int		acceptConnections();
 
 		std::string	extractBody(ClientInfo &info);
 		void uploadFile(ClientInfo &info, std::string data, const char *path);
+		int deleteEmail(std::string &path, const char *filePath);
 		void readRequest(ClientInfo &info);
 		std::string readRequestPOST(ClientInfo &info);
 		std::string parseFileToString(const char *filename);

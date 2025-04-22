@@ -220,8 +220,14 @@ std::string decodeUrl(const std::string &encoded)
 	return decoded;
 }
 
-//structure functions
+bool	is_directory(const char* path)
+{
+	struct stat info;
 
+	if (stat(path, &info) != 0)
+		return false;
+	return (info.st_mode & S_IFMT) == S_IFDIR;
+}
 void BodyInfo::reset()
 {
 	body_str.clear();

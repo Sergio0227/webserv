@@ -109,7 +109,6 @@ void HttpServer::handleRequest(int client_fd)
 	info.close_connection = false;
 
 	readRequest(info);
-	info.info.request.clear();
 	if (info.file_uploaded)
 	{
 		return;
@@ -121,8 +120,10 @@ void HttpServer::handleRequest(int client_fd)
 		if (_debug)
 			logMessage(DEBUG, "Client request failed.", &info, 0);
 		handleErrorResponse(info);
+		info.reset();
+		return;
 	}
-	//info.reset();
+	info.reset();
 }
 
 //reads request and parses request to map<int client_fd, struct ClientInfo>
@@ -185,7 +186,8 @@ void HttpServer::parseRequestLine(ClientInfo& info)
 	req = req.substr(i+1, req.size());
 	i = req.find(' ');
 	std::string path = req.substr(0, i);
-	if (!pathExists(path))
+	
+	if (method != "DELETE" && !pathExists(path))
 	{
 		info.status_code = 404, info.close_connection = true;
 		return ;
@@ -281,6 +283,7 @@ void HttpServer::parseRequestBody(ClientInfo& info)
 //POST: email already exists send 409 Conflict, else save credentials in csv and send 301 redirect to login
 //PUT: updates a password
 //DELETE: deletes an account if user is logged in
+
 void HttpServer::executeResponse(ClientInfo &info)
 {
 	Methods meth = info.info.method;
@@ -329,11 +332,23 @@ void HttpServer::executeResponse(ClientInfo &info)
 	}
 	else if (meth == DELETE)
 	{
-		//todo
-	}
-	else if (meth == PUT)
-	{
-		//todo
+		if (info.info.path.find("/delete_email") == std::string::npos)
+		{
+			info.status_code = 404, info.close_connection = true;
+			return ;
+		}
+		if (!deleteEmail(info.info.path, "var/www/data/users.csv"))
+		{
+			info.status_code = 400;
+			info.status_msg = "Bad Request";
+			std::string error_msg = "Invalid email";
+			sendHttpResponse(info, info.status_msg.c_str(), error_msg, NULL);
+			return;
+		}
+		info.status_code = 200;
+		info.status_msg = "OK";
+		std::string empty_string = "";
+		sendHttpResponse(info, info.status_msg.c_str(), empty_string, NULL);
 	}
 	if (_debug)
 		logMessage(DEBUG, "Client", &info, 2);
@@ -385,6 +400,7 @@ std::string HttpServer::parseFileToString(const char *filename)
 bool HttpServer::pathExists(std::string &path)
 {
 	std::string full_path(root_path);
+
 	full_path += path;
 	if (path == "/register" || path == "/login" || path == "/upload")
 		return true;
@@ -405,10 +421,14 @@ void HttpServer::closeConnection(int fd)
 std::string HttpServer::extractBody(ClientInfo& info)
 {
 	std::string fullpath(root_path);
-	if (info.info.path[info.info.path.size() - 1] == '/')
+
+	if (is_directory(info.info.path.c_str()))
 	{
 		fullpath += info.info.path;
-		fullpath += "index.html";
+		if (info.info.path == "/")
+			fullpath += "index.html";
+		else
+			fullpath += "/index.html";
 	}
 	else
 		fullpath += info.info.path;
@@ -435,27 +455,52 @@ void HttpServer::uploadFile(ClientInfo &info, std::string data, const char *path
 	executeResponse(info);
 }
 
-void serveImage(int client_fd, const std::string& filePath)
+int HttpServer::deleteEmail(std::string &path, const char *filePath)
 {
-	std::ifstream image(filePath.c_str(), std::ios::binary);
-	if (!image.is_open())
+	std::fstream ffile(filePath, std::ios::out | std::ios::in);
+	std::string line;
+	std::ostringstream oss_buff;
+	bool found = false;
+	
+	int i = path.find("email=") + 6;
+	std::string todel = path.substr(i, path.size());
+	while (getline(ffile, line))
 	{
-		//send 404
-		return;
+		int idx = line.find(',');
+		std::string email = line.substr(0, idx);
+		if (email == todel)
+			found = true;
+		else
+			oss_buff << line << std::endl;
 	}
-	std::ostringstream oss;
-	oss << image.rdbuf();
-	std::string data = oss.str();
-	oss.str("");
-	oss.clear();
-	oss << data.size();
-	std::string response = "HTTP/1.1 200 OK\r\n";
-	response += "Content-Type: image/png\r\n";
-	response += "Content-Length: " + oss.str() + "\r\n";
-	response += "Connection: close\r\n";
-	response += "\r\n";
-
-	send(client_fd, response.c_str(), response.size(), 0);
-	send(client_fd, data.c_str(), data.size(), 0);
-	image.close();
+	if (!found)
+		return 0;
+	ffile.close();
+	std::ofstream ofile(filePath, std::ios::trunc);
+	ofile << oss_buff.str();
+	ofile.close();
+	return 1;
 }
+//serving images currently not used
+
+// void HttpServer::serveImage(int client_fd, const std::string& filePath)
+// {
+// 	std::ifstream image(filePath.c_str(), std::ios::binary);
+// 	if (!image.is_open())
+// 		return;
+// 	std::ostringstream oss;
+// 	oss << image.rdbuf();
+// 	std::string data = oss.str();
+// 	oss.str("");
+// 	oss.clear();
+// 	oss << data.size();
+// 	std::string response = "HTTP/1.1 200 OK\r\n";
+// 	response += "Content-Type: image/png\r\n";
+// 	response += "Content-Length: " + oss.str() + "\r\n";
+// 	response += "Connection: close\r\n";
+// 	response += "\r\n";
+
+// 	send(client_fd, response.c_str(), response.size(), 0);
+// 	send(client_fd, data.c_str(), data.size(), 0);
+// 	image.close();
+// }

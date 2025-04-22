@@ -16,12 +16,14 @@
 #include <sys/socket.h>
 #include <ctime>
 #include <iomanip>
+#include <sys/stat.h>
 
 #define BLUE "\033[34m"
 #define GREEN "\033[32m"
 #define RED "\033[31m"
 #define ORANGE "\033[38;5;214m"
 #define RESET "\033[0m"
+
 
 /*
 ---Function Prototypes in Header----
@@ -146,6 +148,8 @@ bool passwordCorrect(BodyInfo &body);
 void storeCredential(BodyInfo &body, const char *name);
 
 std::string decodeUrl(const std::string &encoded);
+
+bool is_directory(const char *path);
 
 std::string getStringMethod(Methods method);
 

@@ -40,6 +40,29 @@
 				alert('Please select a file to upload');
 			}
 		}
+		function deleteEmail()
+		{
+			const email = document.getElementById('emailToDelete').value;
+			if (!email)
+			{
+				alert("Please enter your email.");
+				return;
+			}
+
+			fetch(`/delete_email?email=${encodeURIComponent(email)}`,
+			{
+				method: 'DELETE'
+			})
+			.then(response => response.text())
+			.then(data =>
+			{
+				alert(data);
+			})
+			.catch(error =>
+			{
+				alert("Error: " + error);
+			});
+		}
     </script>
 </head>
 <body>
@@ -50,11 +73,8 @@
 	<input type="file" id="fileInput" accept=".png, .jpg, .jpeg" />
 	<button type="button" onclick="uploadFile()">Upload</button>
 
-	<h3>Delete an Image</h3>
-	<p>Enter the image name (e.g., "blue.png") to delete:</p>
-	<input type="text" id="imageName" placeholder="Enter image name" />
-	<button type="button" onclick="deleteImage()">Delete Image</button>
-
-	<a href="/view-images"><button type="button">View Uploaded Images</button></a>
+	<h3>Delete Your Email</h3>
+	<input type="email" id="emailToDelete" placeholder="Enter your email" required />
+	<button type="button" onclick="deleteEmail()">Delete Email</button>
 </body>
 </html>
