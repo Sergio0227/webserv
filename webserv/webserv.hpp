@@ -151,6 +151,8 @@ std::string decodeUrl(const std::string &encoded);
 
 bool is_directory(const char *path);
 
+void setStatus(ClientInfo &info, int code);
+
 std::string getStringMethod(Methods method);
 
 std::string getCurrentTime();

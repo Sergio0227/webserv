@@ -118,12 +118,12 @@ void HttpServer::handleRequest(int client_fd)
 	if (info.close_connection)
 	{
 		if (_debug)
-			logMessage(DEBUG, "Client request failed.", &info, 0);
+			logMessage(DEBUG, "Client request failed.", &info, 2);
 		handleErrorResponse(info);
-		info.reset();
 		return;
 	}
-	info.reset();
+	// info.reset();
+	_client_info.erase(client_fd);
 }
 
 //reads request and parses request to map<int client_fd, struct ClientInfo>
@@ -180,7 +180,7 @@ void HttpServer::parseRequestLine(ClientInfo& info)
 	std::string method = req.substr(0, i);
 	if (method != "GET" && method != "POST" && method != "PUT" && method != "DELETE")
 	{
-		info.status_code = 405, info.close_connection = true;
+		setStatus(info, 405), info.close_connection = true;
 		return;
 	}
 	req = req.substr(i+1, req.size());
@@ -189,7 +189,7 @@ void HttpServer::parseRequestLine(ClientInfo& info)
 	
 	if (method != "DELETE" && !pathExists(path))
 	{
-		info.status_code = 404, info.close_connection = true;
+		setStatus(info, 404), info.close_connection = true;
 		return ;
 	}
 	req = req.substr(i+1, req.size());
@@ -197,7 +197,7 @@ void HttpServer::parseRequestLine(ClientInfo& info)
 	std::string http_version = req.substr(0, i);
 	if (http_version != "HTTP/1.1")
 	{
-		info.status_code = 505, info.close_connection = true;
+		setStatus(info, 505), info.close_connection = true;
 		return ;
 	}
 	_client_info[info.fd].info.method = getEnumMethod(method);
@@ -218,8 +218,7 @@ void HttpServer::handleErrorResponse(ClientInfo &info)
 	body_path += oss.str();
 	body_path += ".html";
 	std::string body = parseFileToString(body_path.c_str());
-	std::string msg = getStatusMessage(code);
-	sendHttpResponse(info, msg.c_str(), body, NULL);
+	sendHttpResponse(info, body, NULL);
 	closeConnection(info.fd);
 }
 
@@ -290,10 +289,9 @@ void HttpServer::executeResponse(ClientInfo &info)
 
 	if (meth == GET)
 	{
-		info.status_code = 200;
-		info.status_msg = "OK";
+		setStatus(info, 200);
 		std::string body = extractBody(info);
-		sendHttpResponse(info, info.status_msg.c_str(), body, NULL);
+		sendHttpResponse(info, body, NULL);
 	}
 	else if (meth == POST)
 	{
@@ -301,54 +299,56 @@ void HttpServer::executeResponse(ClientInfo &info)
 		{
 			if (emailExists(info))
 			{
-				info.status_code = 409, info.close_connection = true;
+				setStatus(info, 409), info.close_connection = true;
 				return ;
 			}
-			info.status_code = 303;
-			info.status_msg = "See Other";
+			setStatus(info, 303);
 			std::string empty_string = "";
-			sendHttpResponse(info, info.status_msg.c_str(), empty_string, "/login.html");
+			sendHttpResponse(info, empty_string, "/login.html");
 			storeCredential(info.info.body, "var/www/data/users.csv");
 		}
 		else if (info.info.path == "/login")
 		{
 			if (!emailExists(info) || !passwordCorrect(info.info.body))
 			{
-				info.status_code = 401, info.close_connection = true;
+				setStatus(info, 401), info.close_connection = true;
 				return ;
 			}
-			info.status_code = 303;
-			info.status_msg = "See Other";
+			setStatus(info, 303);
 			std::string empty_string = "";
-			sendHttpResponse(info, info.status_msg.c_str(), empty_string, "/user.html");
+			sendHttpResponse(info, empty_string, "/user.html");
 		}
 		else if (info.info.path == "/upload")
 		{
-			info.status_code = 201;
-			info.status_msg = "Created";
+			setStatus(info, 201);
 			std::string empty_string = "";
-			sendHttpResponse(info, info.status_msg.c_str(), empty_string, NULL);
+			sendHttpResponse(info, empty_string, NULL);
+		}
+		else
+		{
+			setStatus(info, 204);
+			std::string empty_string = "";
+			sendHttpResponse(info, empty_string, NULL);
+			return;
 		}
 	}
 	else if (meth == DELETE)
 	{
 		if (info.info.path.find("/delete_email") == std::string::npos)
 		{
-			info.status_code = 404, info.close_connection = true;
+			setStatus(info, 404), info.close_connection = true;
 			return ;
 		}
 		if (!deleteEmail(info.info.path, "var/www/data/users.csv"))
 		{
-			info.status_code = 400;
-			info.status_msg = "Bad Request";
+			setStatus(info, 400);
 			std::string error_msg = "Invalid email";
-			sendHttpResponse(info, info.status_msg.c_str(), error_msg, NULL);
+			sendHttpResponse(info, error_msg, NULL);
 			return;
 		}
-		info.status_code = 200;
-		info.status_msg = "OK";
+		setStatus(info, 200);
 		std::string empty_string = "";
-		sendHttpResponse(info, info.status_msg.c_str(), empty_string, NULL);
+		sendHttpResponse(info, empty_string, NULL);
 	}
 	if (_debug)
 		logMessage(DEBUG, "Client", &info, 2);
@@ -356,7 +356,7 @@ void HttpServer::executeResponse(ClientInfo &info)
 
 //todo error function for send
 //constructs and sends HttpResponse
-void HttpServer::sendHttpResponse(ClientInfo &info, const char *msg, std::string &body, const char *location)
+void HttpServer::sendHttpResponse(ClientInfo &info, std::string &body, const char *location)
 {
 	std::ostringstream oss;
 	oss << info.status_code;
@@ -365,7 +365,7 @@ void HttpServer::sendHttpResponse(ClientInfo &info, const char *msg, std::string
 	oss.clear();
 	oss << body.size();
 	std::string body_len = oss.str();
-	std::string response = "HTTP/1.1 " + status_code_str + " " + std::string(msg) + "\r\n";
+	std::string response = "HTTP/1.1 " + status_code_str + " " + getStatusMessage(info.status_code) + "\r\n";
 	response += "Content-Type: text/html\r\n";
 	response += "Content-Length: " + body_len + "\r\n";
 	response += "Connection: keep-alive\r\n";
@@ -379,13 +379,14 @@ void HttpServer::sendHttpResponse(ClientInfo &info, const char *msg, std::string
 		std::runtime_error("send error");
 }
 
-//change open to fstream
 //reads a file, parses it into a string and returns it
 std::string HttpServer::parseFileToString(const char *filename)
 {
 	std::string str;
 
 	int fd = open(filename, O_RDONLY);
+	if (fd < 0)
+		std::runtime_error("Open");
 	char buffer[1024];
 	int b_read;
 	while ((b_read = read(fd, buffer, sizeof(buffer))) > 0)

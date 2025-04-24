@@ -23,7 +23,6 @@ Socket::~Socket()
 	close(_socket_fd);
 }
 
-// IMPORTANT: Change Error checks for read write send recv, checking with errno is forbidden
 // for debug perfecto so i leave it for now
 void Socket::errorHandler(const char *function_name)
 {

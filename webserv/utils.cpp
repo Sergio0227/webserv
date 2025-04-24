@@ -127,16 +127,18 @@ std::pair<std::string, std::string> getPairLog(LogType level)
 std::string getStatusMessage(int code)
 {
 	std::map<int, std::string> status_map;
-	status_map[405] = "Method Not Allowed";
-	status_map[404] = "Not Found";
-	status_map[505] = "HTTP Version Not Supported";
-	status_map[400] = "Bad Request";
-	status_map[415] = "Unsupported Media Type";
-	status_map[409] = "Conflict";
 	status_map[200] = "OK";
 	status_map[201] = "Created";
-	status_map[401] = "Unauthorized";
+	status_map[204] = "No Content";
 	status_map[303] = "See Other";
+	status_map[400] = "Bad Request";
+	status_map[401] = "Unauthorized";
+	status_map[404] = "Not Found";
+	status_map[405] = "Method Not Allowed";
+	status_map[409] = "Conflict";
+	status_map[415] = "Unsupported Media Type";
+	status_map[505] = "HTTP Version Not Supported";
+	
     if (status_map.find(code) != status_map.end())
 		return status_map[code];
 	else
@@ -255,4 +257,9 @@ void ClientInfo::reset()
 	file_uploaded = false;
 
 	info.reset();
+}
+void setStatus(ClientInfo &info, int code)
+{
+	info.status_code = code;
+	info.status_msg = getStatusMessage(code);
 }

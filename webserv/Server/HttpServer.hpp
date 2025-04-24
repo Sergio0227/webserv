@@ -21,7 +21,7 @@ class HttpServer : public Socket
 		void	parseRequestBody(ClientInfo &info);
 		void	handleErrorResponse(ClientInfo &info);
 		void	executeResponse(ClientInfo &info);
-		void sendHttpResponse(ClientInfo &info, const char *msg, std::string &body, const char *location);
+		void sendHttpResponse(ClientInfo &info, std::string &body, const char *location);
 		void	handleRequest(int client_fd);
 		void	closeConnection(int fd);
 		void serveImage(int client_fd, const std::string &filePath);
