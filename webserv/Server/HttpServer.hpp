@@ -1,5 +1,6 @@
 #pragma once
 #include "Socket.hpp"
+#include "Config.hpp"
 
 class HttpServer : public Socket
 {
@@ -9,6 +10,7 @@ class HttpServer : public Socket
 		fd_set _cur_sockets, _rdy_sockets;
 
 		// serverConfig struct
+		Config *_conf;
 		std::string root_path;
 
 		//monitor sockets
@@ -38,7 +40,7 @@ class HttpServer : public Socket
 		bool pathExists(std::string &path);
 	
 	public:
-		HttpServer(int domain, int type, int protocol, int port, std::string &ip, int backlog, bool debug);
+		HttpServer(Config *conf, int port, std::string ip, int backlog, bool debug);
 		~HttpServer();
 };
 

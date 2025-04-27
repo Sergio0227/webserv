@@ -3,11 +3,12 @@
 HttpServer::HttpServer()
 {}
 
-HttpServer::HttpServer(int domain, int type, int protocol, int port, std::string &ip, int backlog, bool debug) : Socket(domain, type, protocol, port, ip) 
+HttpServer::HttpServer(Config *conf, int port, std::string ip, int backlog, bool debug) : Socket(port, ip) 
 {
 
 	//init serverStruct
-	root_path = "var/www/html";
+	_conf = conf;
+	root_path = _conf->getRoot();
 
 	_debug = debug;
 	_backlog = backlog;
@@ -423,7 +424,7 @@ std::string HttpServer::extractBody(ClientInfo& info)
 {
 	std::string fullpath(root_path);
 
-	if (is_directory(info.info.path.c_str()))
+	if (isDirectory(info.info.path))
 	{
 		fullpath += info.info.path;
 		if (info.info.path == "/")

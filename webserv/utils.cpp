@@ -222,13 +222,25 @@ std::string decodeUrl(const std::string &encoded)
 	return decoded;
 }
 
-bool	is_directory(const char* path)
+bool isDirectory(const std::string &path)
 {
-	struct stat info;
-
-	if (stat(path, &info) != 0)
+	struct stat st;
+	if (stat(path.c_str(), &st) != 0)
 		return false;
-	return (info.st_mode & S_IFMT) == S_IFDIR;
+	return S_ISDIR(st.st_mode);
+}
+
+bool isRegularFile(const std::string& path)
+{
+	struct stat st;
+	if (stat(path.c_str(), &st) != 0)
+		return false;
+	return S_ISREG(st.st_mode);
+}
+
+bool hasReadAccess(const std::string& path)
+{
+	return access(path.c_str(), R_OK | X_OK) == 0;
 }
 void BodyInfo::reset()
 {

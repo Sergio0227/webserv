@@ -1,5 +1,4 @@
-#include "Client.hpp"
-#include "HttpServer.hpp"
+#include "Brain.hpp"
 
 int	g_flag = 1;
 
@@ -16,20 +15,21 @@ int main(int argc, char *argv[])
 	if (argc > 2)
 	{
 		std::cerr << "Error: Too many arguments \n" << "Usage -> ./webserv [configfile]" <<std::endl;
-		return EXIT_FAILURE;
+		return (EXIT_FAILURE);
 	}
-	(void)argv;
 	signal(SIGINT, handleShutdown);
-	std::string ip = "127.0.0.1";
-	int port = 8080;
-	int backlog = 5;
+	std::string config_file_path = "configs/default.conf";
+	if (argc == 2)
+		config_file_path = argv[1];
 	try
 	{
-		HttpServer(AF_INET, SOCK_STREAM, 0, port, ip, backlog, true);
+		std::vector<std::string> configFile;
+		configFile = storeFormatedFile(config_file_path);
+		Brain brain(configFile);
 	}
 	catch (std::exception &e)
 	{
 		std::cerr << e.what() << std::endl;
 	}
-	return 0;
+	return (EXIT_SUCCESS);
 }

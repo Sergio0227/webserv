@@ -23,6 +23,8 @@
 #define RED "\033[31m"
 #define ORANGE "\033[38;5;214m"
 #define RESET "\033[0m"
+#define BACKLOG 5
+#define MAX_CONTENT_LENGTH 10000
 
 
 /*
@@ -149,7 +151,11 @@ void storeCredential(BodyInfo &body, const char *name);
 
 std::string decodeUrl(const std::string &encoded);
 
-bool is_directory(const char *path);
+bool isDirectory(const std::string &path);
+
+bool isRegularFile(const std::string &path);
+
+bool hasReadAccess(const std::string &path);
 
 void setStatus(ClientInfo &info, int code);
 
@@ -158,3 +164,6 @@ std::string getStringMethod(Methods method);
 std::string getCurrentTime();
 std::string							getStatusMessage(int code);
 std::pair<std::string, std::string> getPairLog(LogType level);
+
+//formatter
+std::vector<std::string> storeFormatedFile(std::string config_file_path);

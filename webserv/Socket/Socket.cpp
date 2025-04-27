@@ -2,15 +2,21 @@
 
 Socket::Socket()
 {}
-Socket::Socket(int domain, int type, int protocol, int port, std::string &ip)
+Socket::Socket(int port, std::string &ip)
 {
-	_socket_addr.sin_family = domain;
-	int ip_res = inet_pton(domain, ip.c_str(), &_socket_addr.sin_addr);
+	// Setting up socket parameters: IPv4 (AF_INET), TCP (SOCK_STREAM), default protocol (0)
+	_domain = AF_INET;
+	_type = SOCK_STREAM;
+	_protocol = 0;
+
+	// Create and configure the socket
+	_socket_addr.sin_family = _domain;
+	int ip_res = inet_pton(_domain, ip.c_str(), &_socket_addr.sin_addr);
 	if (ip_res <= 0)
 		errorHandler("Inet_pton");
 	_socket_addr.sin_port = htons(port);
 	memset(_socket_addr.sin_zero, 0, sizeof(_socket_addr.sin_zero));
-	_socket_fd = socket(domain, type, protocol);
+	_socket_fd = socket(_domain, _type, _protocol);
 	if (_socket_fd < 0)
 		errorHandler("Socket");
 	int optval = 1;
@@ -23,7 +29,6 @@ Socket::~Socket()
 	close(_socket_fd);
 }
 
-// for debug perfecto so i leave it for now
 void Socket::errorHandler(const char *function_name)
 {
 	std::string error_msg(function_name);
