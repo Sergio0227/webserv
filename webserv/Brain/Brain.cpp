@@ -8,7 +8,7 @@ Brain::Brain(std::vector<std::string>& config_file)
     this->_config_files.resize(0);
     splitServers(config_file);
 	initServerConfigs();
-	HttpServer(_server_conf[0], static_cast<int>(_server_conf[0]->getPort()),_server_conf[0]->getServerName(),  BACKLOG, true);
+	//HttpServer(_server_conf[0], static_cast<int>(_server_conf[0]->getPort()),_server_conf[0]->getServerName(),  BACKLOG, true);
 }
 
 Brain::~Brain()

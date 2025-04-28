@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 		return (EXIT_FAILURE);
 	}
 	signal(SIGINT, handleShutdown);
-	std::string config_file_path = "configs/default.conf";
+	std::string config_file_path = "config/default.conf";
 	if (argc == 2)
 		config_file_path = argv[1];
 	try
