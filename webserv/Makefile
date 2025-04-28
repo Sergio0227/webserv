@@ -1,4 +1,4 @@
-SRC = 		Server/HttpServer.cpp Socket/Socket.cpp main_server.cpp utils.cpp formatter.cpp Location/Location.cpp Brain/Brain.cpp ServerConfig/Config.cpp
+SRC = 		Server/HttpServer.cpp Socket/Socket.cpp main.cpp utils.cpp formatter.cpp Location/Location.cpp Brain/Brain.cpp ServerConfig/Config.cpp
 OBJS		= ${SRC:.cpp=.o}
 NAME		= webserv
 CFLAGS		= -Werror -Wall -Wextra
