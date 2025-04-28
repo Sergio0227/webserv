@@ -8,7 +8,7 @@ Brain::Brain(std::vector<std::string>& config_file)
     this->_config_files.resize(0);
     splitServers(config_file);
 	initServerConfigs();
-	//HttpServer(_server_conf[0], static_cast<int>(_server_conf[0]->getPort()),_server_conf[0]->getServerName(),  BACKLOG, true);
+	HttpServer(_server_conf[0], static_cast<int>(_server_conf[0]->getPort()),_server_conf[0]->getServerName(),  BACKLOG, true);
 }
 
 Brain::~Brain()
@@ -83,7 +83,7 @@ void Brain::parseConfigFile(int server_index)
             std::string value = this->_config_files[server_index][i].substr(param.size() + 1, this->_config_files[server_index][i].size());
             if (param == "server_name")
                 this->_server_conf[server_index]->setServerName(value);
-            else if (param == "port")
+            else if (param == "listen")
                 this->_server_conf[server_index]->setPort(value);
             else if (param == "root")
                 this->_server_conf[server_index]->setRoot(value);

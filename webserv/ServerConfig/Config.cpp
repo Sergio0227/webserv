@@ -18,7 +18,7 @@ Config::~Config()
 
 void Config::initErrorPages()
 {
-    return;
+
 }
 
 void Config::setPort(std::string& port)
@@ -39,8 +39,8 @@ void Config::setServerName(std::string& server_name)
     validParamtr(server_name);
     if (server_name == "localhost")
         server_name =  "127.0.0.1";
-    // if (inet_addr(server_name.c_str()) == INADDR_NONE) //INADDR_NON is not a valid IPV4 address
-    //     throw ConfigException("Invalid Host address");
+    if (inet_addr(server_name.c_str()) == INADDR_NONE) //INADDR_NON is not a valid IPV4 address
+         throw ConfigException("Invalid Host address");
     this->_server_name = server_name;
 }
 
