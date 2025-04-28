@@ -1,4 +1,4 @@
-#include "Brain.hpp"
+       #include "Brain.hpp"
 #include <stdexcept>
 
 Brain::Brain(std::vector<std::string>& config_file)
@@ -8,6 +8,9 @@ Brain::Brain(std::vector<std::string>& config_file)
     this->_config_files.resize(0);
     splitServers(config_file);
 	initServerConfigs();
+	std::cout << "ip: " << _server_conf[0]->getServerName() << std::endl;
+	std::cout << "root path: " << _server_conf[0]->getRoot() << std::endl;
+	std::cout << "port: " << _server_conf[0]->getPort() << std::endl;
 	HttpServer(_server_conf[0], static_cast<int>(_server_conf[0]->getPort()),_server_conf[0]->getServerName(),  BACKLOG, true);
 }
 

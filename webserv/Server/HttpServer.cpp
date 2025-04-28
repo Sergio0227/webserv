@@ -151,6 +151,11 @@ void HttpServer::readRequest(ClientInfo &info)
 			if (info.close_connection)
 				return ;
 			body_size = parseRequestHeader(info);
+			if (body_size > MAX_BODY_SIZE)
+			{
+				setStatus(413), info.close_connection = true;
+				return ;
+			}
 			if (info.close_connection || body_size == 0)
 				return ;
 			total_read = info.info.request.size() - 2;
@@ -428,9 +433,9 @@ std::string HttpServer::extractBody(ClientInfo& info)
 	{
 		fullpath += info.info.path;
 		if (info.info.path == "/")
-			fullpath += "index.html";
+			fullpath += conf->getIndex();
 		else
-			fullpath += "/index.html";
+			fullpath += "/" + conf->getIndex();
 	}
 	else
 		fullpath += info.info.path;
