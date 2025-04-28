@@ -62,12 +62,41 @@ void Brain::initServerConfigs()
 {
     this->_server_conf.resize(this->_nb_servers);
     for (int i = 0; i < this->_nb_servers; i++)
+    {
         this->_server_conf[i] = new Config();
+        parseConfigFile(i);
+    }
 }
 
-void Brain::parseConfigFile()
+void Brain::parseConfigFile(int server_index)
 {
-    this->_server_conf.resize(this->_nb_servers);
+   // std::string valid_params[] = {"server_name", "port", "root", "client_max_body_size", "index", "autoindex", "error_page"};
+    bool ignore = false;
+
+    for (size_t i = 0; i < this->_config_files[server_index].size() ; i++)
+    {
+        if (this->_config_files[server_index][i] == "{")
+            ignore = true;
+        if (!ignore)
+        {
+            std::string param = this->_config_files[server_index][i].substr(0, this->_config_files[server_index][i].find(' '));
+            std::string value = this->_config_files[server_index][i].substr(param.size() + 1, this->_config_files[server_index][i].size());
+            if (param == "server_name")
+                this->_server_conf[server_index]->setServerName(value);
+            else if (param == "port")
+                this->_server_conf[server_index]->setPort(value);
+            else if (param == "root")
+                this->_server_conf[server_index]->setRoot(value);
+            else if (param == "client_max_body_size")
+                this->_server_conf[server_index]->setClientMaxBodySize(value);
+            else if (param == "index")
+                this->_server_conf[server_index]->setIndex(value);
+            else if (param == "autoindex")
+                this->_server_conf[server_index]->setAutoindex(value);
+        }
+        if (this->_config_files[server_index][i] == "}")
+            ignore = false;
+    }
 }
 
 int Brain::getNbServers()

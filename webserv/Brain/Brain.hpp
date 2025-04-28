@@ -13,11 +13,13 @@ private:
     std::vector<Config*>                     _server_conf;
 
     void splitServers(std::vector<std::string>);
-    void parseConfigFile();
+    void parseConfigFile(int server_index);
 	void initServerConfigs();
 
 public:
     Brain(std::vector<std::string>& config_files);
     ~Brain();
     int getNbServers();
+
+
 };

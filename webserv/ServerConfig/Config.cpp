@@ -47,10 +47,10 @@ void Config::setServerName(std::string& server_name)
 void Config::setRoot(std::string& root)
 {
     validParamtr(root);
-    if (!isDirectory(root))
-        throw ConfigException("Invalid Root, error while opening root folder");
-    if (!hasReadAccess(root))
-        throw ConfigException("Invalid Root, no permissions to open root folder");
+ // //  if (!isDirectory(root))
+ //       throw ConfigException("Invalid Root, error while opening root folder");
+ //   if (!hasReadAccess(root))
+ //       throw ConfigException("Invalid Root, no permissions to open root folder");
     this->_root = root;
 }
 
@@ -66,11 +66,11 @@ void Config::setClientMaxBodySize(std::string& client_max_body_size)
 void Config::setIndex(std::string& index)
 {
     validParamtr(index);
-    if (!isRegularFile(index))
-        throw ConfigException("Invalid Index, error while opening index file");
-    if (!hasReadAccess(index))
-        throw ConfigException("Invalid Index, no permissions to open index file");
-    std::string absRoot = realpath(_root.c_str(), NULL);
+ // //  if (!isRegularFile(index))
+ //       throw ConfigException("Invalid Index, error while opening index file");
+ //   if (!hasReadAccess(index))
+ //       throw ConfigException("Invalid Index, no permissions to open index file");
+ //   std::string absRoot = realpath(_root.c_str(), NULL);
     this->_index = index;
 }
 
