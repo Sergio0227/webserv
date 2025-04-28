@@ -1,4 +1,4 @@
-/snap/clion/326/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/snap/clion/326/bin/ninja/linux/x64/ninja -G Ninja -S /home/sergio/42/webserv -B /home/sergio/42/webserv/cmake-build-debug
+/snap/clion/338/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles" -S /home/sergio/Desktop/webserver -B /home/sergio/Desktop/webserver/cmake-build-debug
 -- Configuring done (0.0s)
 -- Generating done (0.0s)
--- Build files have been written to: /home/sergio/42/webserv/cmake-build-debug
+-- Build files have been written to: /home/sergio/Desktop/webserver/cmake-build-debug
