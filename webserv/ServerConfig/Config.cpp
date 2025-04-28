@@ -39,8 +39,8 @@ void Config::setServerName(std::string& server_name)
     validParamtr(server_name);
     if (server_name == "localhost")
         server_name =  "127.0.0.1";
-    // if (inet_addr(server_name.c_str()) == INADDR_NONE) //INADDR_NON is not a valid IPV4 address
-    //     throw ConfigException("Invalid Host address");
+    if (inet_addr(server_name.c_str()) == INADDR_NONE) //INADDR_NON is not a valid IPV4 address
+        throw ConfigException("Invalid Host address");
     this->_server_name = server_name;
 }
 
@@ -66,11 +66,11 @@ void Config::setClientMaxBodySize(std::string& client_max_body_size)
 void Config::setIndex(std::string& index)
 {
     validParamtr(index);
-    if (!isRegularFile(index))
-        throw ConfigException("Invalid Index, error while opening index file");
-    if (!hasReadAccess(index))
-        throw ConfigException("Invalid Index, no permissions to open index file");
-    std::string absRoot = realpath(_root.c_str(), NULL);
+    // if (!isRegularFile(index))
+    //     throw ConfigException("Invalid Index, error while opening index file");
+    // if (!hasReadAccess(index))
+    //     throw ConfigException("Invalid Index, no permissions to open index file");
+    // std::string absRoot = realpath(_root.c_str(), NULL);
     this->_index = index;
 }
 

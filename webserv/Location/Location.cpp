@@ -5,7 +5,7 @@ Location::Location()
     this->_return_value = "";
     this->_alias = "";
     this->_root = "";
-    this->_client_max_body_size = MAX_CONTENT_LENGTH;
+    this->_client_max_body_size = 0;
     this->_index = "";
     this->_autoindex = false;
     initErrorPages();

@@ -3,17 +3,15 @@
 HttpServer::HttpServer()
 {}
 
-HttpServer::HttpServer(Config *conf, int port, std::string ip, int backlog, bool debug) : Socket(port, ip) 
+HttpServer::HttpServer(Config *conf, short port, std::string ip, int backlog, bool debug) : Socket(port, ip) 
 {
 
 	//init serverStruct
 	_conf = conf;
-	root_path = _conf->getRoot();
 
 	_debug = debug;
 	_backlog = backlog;
-	FD_ZERO(&_cur_sockets);
-	FD_SET(_socket_fd, &_cur_sockets);
+
 	_client_info[_socket_fd].fd = _socket_fd; //first entry in _client_info map is server socked with addr saved to clean up
 	_client_info[_socket_fd].addr = _socket_addr;
 
@@ -22,67 +20,11 @@ HttpServer::HttpServer(Config *conf, int port, std::string ip, int backlog, bool
 	if (listen(_socket_fd, _backlog) < 0)
 		errorHandler("Listen");
 	logMessage(SUCCESS, "Server successfully set up and listening for incoming connections.", NULL, 0);
-	handleIncomingConnections();
 }
 
 HttpServer::~HttpServer()
 {
-	for (int i = 0; i < FD_SETSIZE; ++i)
-	{
-		if (FD_ISSET(i, &_cur_sockets))
-		{
-			if (i == _socket_fd)
-				logMessage(INFO, "Server connection closed.", &_client_info[i], 0);
-			else
-				logMessage(INFO, "Client connection closed.", &_client_info[i], 0);
-			close(i);
-			FD_CLR(i, &_cur_sockets);
-		}
-	}
-	logMessage(SUCCESS, "Server has successfully shut down. All connections closed.", NULL, 0);
-}
 
-void HttpServer::handleIncomingConnections()
-{
-	while (g_flag)
-	{
-		_rdy_sockets = _cur_sockets;
-		if (select(FD_SETSIZE, &_rdy_sockets, NULL, NULL, NULL) < 0)
-		{
-			if (errno == EINTR)
-				continue;
-			else
-				errorHandler("Select");
-		}	
-		for (int i = 0; i < FD_SETSIZE; ++i)
-		{
-			if (FD_ISSET(i, &_rdy_sockets))
-			{
-				if (i == _socket_fd)
-				{
-					//another class should handle this function like this: 
-					/*
-						int client_fd = _servers[i].accept();
-						if (client_fd > 0)
-						{
-							FD_SET(client_fd, &_fd_set);
-							_clients[client_fd] = &_servers[i]; // associate client with Server!
-						}
-						else if (_clients.count(i)) // i is a client socket
-						{
-							Server* server = _clients[i];
-							server->handleRequest(i);
-					*/
-					int client_fd = acceptConnections();
-					if (client_fd < 0)
-						continue;
-					FD_SET(client_fd, &_cur_sockets);
-				}
-				else
-					handleRequest(i);
-			}
-		}
-	}
 }
 
 int HttpServer::acceptConnections()
@@ -103,7 +45,7 @@ int HttpServer::acceptConnections()
 
 //parse request to methods, based on method execute response or handle error
 
-void HttpServer::handleRequest(int client_fd)
+bool HttpServer::handleRequest(int client_fd)
 {
 	ClientInfo &info = _client_info[client_fd];
 	info.fd = client_fd;
@@ -112,7 +54,7 @@ void HttpServer::handleRequest(int client_fd)
 	readRequest(info);
 	if (info.file_uploaded)
 	{
-		return;
+		return true;
 	}
 	if (!info.close_connection)
 		executeResponse(info);
@@ -121,10 +63,11 @@ void HttpServer::handleRequest(int client_fd)
 		if (_debug)
 			logMessage(DEBUG, "Client request failed.", &info, 2);
 		handleErrorResponse(info);
-		return;
+		return false;
 	}
 	// info.reset();
-	_client_info.erase(client_fd);
+	//_client_info.erase(client_fd);
+	return true;
 }
 
 //reads request and parses request to map<int client_fd, struct ClientInfo>
@@ -151,9 +94,9 @@ void HttpServer::readRequest(ClientInfo &info)
 			if (info.close_connection)
 				return ;
 			body_size = parseRequestHeader(info);
-			if (body_size > MAX_BODY_SIZE)
+			if (body_size > _conf->getClientMaxBodySize())
 			{
-				setStatus(413), info.close_connection = true;
+				setStatus(info, 413), info.close_connection = true;
 				return ;
 			}
 			if (info.close_connection || body_size == 0)
@@ -224,7 +167,7 @@ void HttpServer::handleErrorResponse(ClientInfo &info)
 	body_path += oss.str();
 	body_path += ".html";
 	std::string body = parseFileToString(body_path.c_str());
-	sendHttpResponse(info, body, NULL);
+	sendHttpResponse(info, NULL, "text/html", body);
 	closeConnection(info.fd);
 }
 
@@ -285,7 +228,7 @@ void HttpServer::parseRequestBody(ClientInfo& info)
 }
 //Depending on the method, the server sends a response back
 //GET: if path or dir exists, if dir -> add index.html, if file doesnt exist send 404, else send html back with 200 ok
-//POST: email already exists send 409 Conflict, else save credentials in csv and send 301 redirect to login
+//POST: email already exists send 409 Conflict, else save credentials in csv and send 303 redirect to login
 //PUT: updates a password
 //DELETE: deletes an account if user is logged in
 
@@ -297,7 +240,7 @@ void HttpServer::executeResponse(ClientInfo &info)
 	{
 		setStatus(info, 200);
 		std::string body = extractBody(info);
-		sendHttpResponse(info, body, NULL);
+		sendHttpResponse(info, NULL, "text/html", body);
 	}
 	else if (meth == POST)
 	{
@@ -310,7 +253,8 @@ void HttpServer::executeResponse(ClientInfo &info)
 			}
 			setStatus(info, 303);
 			std::string empty_string = "";
-			sendHttpResponse(info, empty_string, "/login.html");
+			sendHttpResponse(info, "/login", NULL, empty_string);
+			
 			storeCredential(info.info.body, "var/www/data/users.csv");
 		}
 		else if (info.info.path == "/login")
@@ -322,20 +266,13 @@ void HttpServer::executeResponse(ClientInfo &info)
 			}
 			setStatus(info, 303);
 			std::string empty_string = "";
-			sendHttpResponse(info, empty_string, "/user.html");
+			sendHttpResponse(info, "/user", NULL, empty_string);
 		}
 		else if (info.info.path == "/upload")
 		{
 			setStatus(info, 201);
 			std::string empty_string = "";
-			sendHttpResponse(info, empty_string, NULL);
-		}
-		else
-		{
-			setStatus(info, 204);
-			std::string empty_string = "";
-			sendHttpResponse(info, empty_string, NULL);
-			return;
+			sendHttpResponse(info, NULL, NULL, empty_string);
 		}
 	}
 	else if (meth == DELETE)
@@ -345,16 +282,16 @@ void HttpServer::executeResponse(ClientInfo &info)
 			setStatus(info, 404), info.close_connection = true;
 			return ;
 		}
-		if (!deleteEmail(info.info.path, "var/www/data/users.csv"))
+		if (deleteEmail(info.info.path, "var/www/data/users.csv") == false)
 		{
 			setStatus(info, 400);
 			std::string error_msg = "Invalid email";
-			sendHttpResponse(info, error_msg, NULL);
+			sendHttpResponse(info, NULL, "text/plain", error_msg);
 			return;
 		}
 		setStatus(info, 200);
 		std::string empty_string = "";
-		sendHttpResponse(info, empty_string, NULL);
+		sendHttpResponse(info, NULL, NULL, empty_string);
 	}
 	if (_debug)
 		logMessage(DEBUG, "Client", &info, 2);
@@ -362,18 +299,21 @@ void HttpServer::executeResponse(ClientInfo &info)
 
 //todo error function for send
 //constructs and sends HttpResponse
-void HttpServer::sendHttpResponse(ClientInfo &info, std::string &body, const char *location)
+void HttpServer::sendHttpResponse(ClientInfo &info, const char *location, const char *content_type, std::string &body)
 {
 	std::ostringstream oss;
 	oss << info.status_code;
 	std::string status_code_str = oss.str();
 	oss.str("");
 	oss.clear();
-	oss << body.size();
-	std::string body_len = oss.str();
 	std::string response = "HTTP/1.1 " + status_code_str + " " + getStatusMessage(info.status_code) + "\r\n";
-	response += "Content-Type: text/html\r\n";
-	response += "Content-Length: " + body_len + "\r\n";
+	if (content_type != NULL)
+	{
+		oss << body.size();
+		std::string body_len = oss.str();
+		response += "Content-Type: " + std::string(content_type) + "\r\n";
+		response += "Content-Length: " + body_len + "\r\n";
+	}
 	response += "Connection: keep-alive\r\n";
 	if (location != NULL)
 		response += "Location: " + std::string(location) + "\r\n";
@@ -406,7 +346,7 @@ std::string HttpServer::parseFileToString(const char *filename)
 
 bool HttpServer::pathExists(std::string &path)
 {
-	std::string full_path(root_path);
+	std::string full_path(_conf->getRoot());
 
 	full_path += path;
 	if (path == "/register" || path == "/login" || path == "/upload")
@@ -422,23 +362,23 @@ void HttpServer::closeConnection(int fd)
 		logMessage(DEBUG, "Connection closed", &_client_info[fd], 0);
 	_client_info.erase(fd);
 	close(fd);
-	FD_CLR(fd, &_cur_sockets);
 }
-
+//examples of path requests:
+//ex: / -> root/index.html
+//ex: /register -> root/register/index.html
+//ex: /register/index.html -> root/register/index.html
 std::string HttpServer::extractBody(ClientInfo& info)
 {
-	std::string fullpath(root_path);
+	std::string fullpath(_conf->getRoot());
 
-	if (isDirectory(info.info.path))
+	fullpath += info.info.path;
+	if (isDirectory(fullpath))
 	{
-		fullpath += info.info.path;
 		if (info.info.path == "/")
-			fullpath += conf->getIndex();
+			fullpath += _conf->getIndex();
 		else
-			fullpath += "/" + conf->getIndex();
+			fullpath += "/" + _conf->getIndex();
 	}
-	else
-		fullpath += info.info.path;
 	return (parseFileToString(fullpath.c_str()));
 }
 void HttpServer::uploadFile(ClientInfo &info, std::string data, const char *path)
@@ -462,7 +402,7 @@ void HttpServer::uploadFile(ClientInfo &info, std::string data, const char *path
 	executeResponse(info);
 }
 
-int HttpServer::deleteEmail(std::string &path, const char *filePath)
+bool HttpServer::deleteEmail(std::string &path, const char *filePath)
 {
 	std::fstream ffile(filePath, std::ios::out | std::ios::in);
 	std::string line;
@@ -481,12 +421,15 @@ int HttpServer::deleteEmail(std::string &path, const char *filePath)
 			oss_buff << line << std::endl;
 	}
 	if (!found)
-		return 0;
+	{
+		ffile.close();
+		return false;
+	}
 	ffile.close();
 	std::ofstream ofile(filePath, std::ios::trunc);
 	ofile << oss_buff.str();
 	ofile.close();
-	return 1;
+	return true;
 }
 //serving images currently not used
 
@@ -511,3 +454,8 @@ int HttpServer::deleteEmail(std::string &path, const char *filePath)
 // 	send(client_fd, data.c_str(), data.size(), 0);
 // 	image.close();
 // }
+
+int HttpServer::getSocket()
+{
+	return _socket_fd;
+}

@@ -17,6 +17,7 @@
 #include <ctime>
 #include <iomanip>
 #include <sys/stat.h>
+#include <climits>
 
 #define BLUE "\033[34m"
 #define GREEN "\033[32m"
@@ -24,8 +25,7 @@
 #define ORANGE "\033[38;5;214m"
 #define RESET "\033[0m"
 #define BACKLOG 5
-#define MAX_CONTENT_LENGTH 10000
-
+#define MAX_CONTENT_LENGTH 300000 //300kb maxbody if maxbody doesnt exist in config
 
 /*
 ---Function Prototypes in Header----
@@ -42,7 +42,7 @@ int shutdown(int sockfd, int how)
 int close(int sockfd)
 
 ---Info------------
-socket() creates a new socket like a door for connections
+socket() creates a new socket like a door for connections, a socket is an endpoint that you can configure (ipv4, tcp, ...)
 bind() to bind an ip address and a port to a socket
 listen(), listens on a socket and tells the OS to queue up to backlog clients before calling accept()
 accept() blocks until a client connects

@@ -1,6 +1,5 @@
 #include "webserv.hpp"
 
-
 void	printClientInfo(ClientInfo &info)
 {
 	std::cout << "--------Parsing-Request-----------------"<< std::endl;
@@ -136,6 +135,7 @@ std::string getStatusMessage(int code)
 	status_map[404] = "Not Found";
 	status_map[405] = "Method Not Allowed";
 	status_map[409] = "Conflict";
+	status_map[413] = "Payload Too Large";
 	status_map[415] = "Unsupported Media Type";
 	status_map[505] = "HTTP Version Not Supported";
 	

@@ -1,25 +1,104 @@
-       #include "Brain.hpp"
+#include "Brain.hpp"
 #include <stdexcept>
 
 Brain::Brain(std::vector<std::string>& config_file)
 {
-    this->_nb_servers = 0;
-    this->_server_conf.resize(0);
-    this->_config_files.resize(0);
-    splitServers(config_file);
+	_nb_servers = 0;
+	_server_conf.resize(0);
+	_config_files.resize(0);
+	FD_ZERO(&_cur_sockets);
+
+
+	splitServers(config_file);
 	initServerConfigs();
-	std::cout << "ip: " << _server_conf[0]->getServerName() << std::endl;
-	std::cout << "root path: " << _server_conf[0]->getRoot() << std::endl;
-	std::cout << "port: " << _server_conf[0]->getPort() << std::endl;
-	HttpServer(_server_conf[0], static_cast<int>(_server_conf[0]->getPort()),_server_conf[0]->getServerName(),  BACKLOG, true);
+	//std::cout << "Index: " << _server_conf[0]->getIndex() << std::endl;
+	setupServers();
+	handleConnections();
+}
+
+void Brain::handleConnections()
+{
+	int j;
+
+	while (g_flag)
+	{
+		_rdy_sockets = _cur_sockets;
+		if (select(FD_SETSIZE, &_rdy_sockets, NULL, NULL, NULL) < 0)
+		{
+			if (errno == EINTR)
+				continue;
+			else
+				throw std::runtime_error("Error: select");
+		}	
+		for (int i = 0; i < FD_SETSIZE; ++i)
+		{
+			if (FD_ISSET(i, &_rdy_sockets))
+			{
+				if ((j = isServerFd(i)) != INT_MAX)
+				{
+					int client_fd = _servers[j]->acceptConnections();
+					if (client_fd < 0)
+						continue;
+					FD_SET(client_fd, &_cur_sockets);
+					_client_to_serv_map[client_fd] = _servers[j];
+				}
+				else
+				{
+					HttpServer* server = _client_to_serv_map[i];
+					if (!server->handleRequest(i))
+						FD_CLR(i, &_cur_sockets);
+				}
+			}
+		}
+	}
+}
+
+int Brain::isServerFd(int fd)
+{
+	for(size_t i = 0; i < _server_sockets.size(); i++)
+	{
+		if (fd == _server_sockets[i])
+			return (i);
+	}
+	return (INT_MAX);
+}
+
+void Brain::setupServers()
+{
+	for(int i = 0; i < _nb_servers; i++)
+	{
+		HttpServer *server = new HttpServer(_server_conf[i], _server_conf[i]->getPort(),_server_conf[i]->getServerName(),  BACKLOG, true);
+		_servers.push_back(server);
+		int server_fd = _servers[i]->getSocket();
+		_server_sockets.push_back(server_fd);
+		FD_SET(server_fd, &_cur_sockets);
+	}
 }
 
 Brain::~Brain()
 {
-    for (int i = 0; i < this->_nb_servers; i++)
-        delete _server_conf[i];
-    _server_conf.resize(0);
-    _config_files.resize(0);
+	for (int i = 0; i < _nb_servers; i++)
+		delete _server_conf[i];
+
+	for (int i = 0; i < FD_SETSIZE; ++i)
+	{
+		if (FD_ISSET(i, &_cur_sockets))
+		{
+			// if (isServerFd(i))
+			// 	logMessage(INFO, "Server connection closed.", &_client_info[i], 0);
+			// else
+			// 	logMessage(INFO, "Client connection closed.", &_client_info[i], 0);
+			close(i);
+			FD_CLR(i, &_cur_sockets);
+		}
+	}
+	logMessage(SUCCESS, "Server has successfully shut down. All connections closed.", NULL, 0);
+
+
+	for (int i = 0; i < _nb_servers; i++)
+		delete _servers[i];
+
+	
 }
 
 void Brain::splitServers(std::vector<std::string> config_file)
@@ -63,14 +142,43 @@ void Brain::splitServers(std::vector<std::string> config_file)
 
 void Brain::initServerConfigs()
 {
-    this->_server_conf.resize(this->_nb_servers);
-    for (int i = 0; i < this->_nb_servers; i++)
-        this->_server_conf[i] = new Config();
+	this->_server_conf.resize(this->_nb_servers);
+	for (int i = 0; i < this->_nb_servers; i++)
+	{
+		this->_server_conf[i] = new Config();
+		parseConfigFile(i);
+	}
 }
 
-void Brain::parseConfigFile()
+void Brain::parseConfigFile(int server_index)
 {
-    this->_server_conf.resize(this->_nb_servers);
+	// std::string valid_params[] = {"server_name", "port", "root", "client_max_body_size", "index", "autoindex", "error_page"};
+	bool ignore = false;
+
+	for (size_t i = 0; i < this->_config_files[server_index].size() ; i++)
+	{
+		if (this->_config_files[server_index][i] == "{")
+			ignore = true;
+		if (!ignore)
+		{
+			std::string param = this->_config_files[server_index][i].substr(0, this->_config_files[server_index][i].find(' '));
+			std::string value = this->_config_files[server_index][i].substr(param.size() + 1, this->_config_files[server_index][i].size());
+			if (param == "server_name")
+				this->_server_conf[server_index]->setServerName(value);
+			else if (param == "listen")
+				this->_server_conf[server_index]->setPort(value);
+			else if (param == "root")
+				this->_server_conf[server_index]->setRoot(value);
+			else if (param == "client_max_body_size")
+				this->_server_conf[server_index]->setClientMaxBodySize(value);
+			else if (param == "index")
+				this->_server_conf[server_index]->setIndex(value);
+			else if (param == "autoindex")
+				this->_server_conf[server_index]->setAutoindex(value);
+		}
+		if (this->_config_files[server_index][i] == "}")
+			ignore = false;
+	}
 }
 
 int Brain::getNbServers()
