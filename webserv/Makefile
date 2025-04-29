@@ -1,10 +1,17 @@
-SERVER_SRC = Server/HttpServer.cpp Socket/Socket.cpp main_server.cpp utils.cpp formatter.cpp Location/Location.cpp Brain/Brain.cpp ServerConfig/Config.cpp
+SERVER_SRC = 	src/Server/HttpServer.cpp \
+				src/Socket/Socket.cpp \
+				src/main_server.cpp \
+				src/utils.cpp \
+				src/formatter.cpp \
+				src/Location/Location.cpp \
+				src/Brain/Brain.cpp \
+				src/ServerConfig/Config.cpp
 
 SERVER_OBJ = $(SERVER_SRC:.cpp=.o)
 
 SERVER_EXEC = server
 CFLAGS		= -Werror -Wall -Wextra
-CPPFLAGS	= -std=c++98 -I./Socket -I./Client -I./Server -I./Location -I./Brain -I./ServerConfig -I.
+CPPFLAGS	= -std=c++98 -I./lib
 CC			= c++
 RM			= rm -rf
 

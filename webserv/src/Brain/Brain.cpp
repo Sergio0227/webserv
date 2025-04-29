@@ -46,7 +46,10 @@ void Brain::handleConnections()
 				{
 					HttpServer* server = _client_to_serv_map[i];
 					if (!server->handleRequest(i))
+					{
 						FD_CLR(i, &_cur_sockets);
+						_client_to_serv_map.erase(i);
+					}
 				}
 			}
 		}
@@ -93,7 +96,6 @@ Brain::~Brain()
 		}
 	}
 	logMessage(SUCCESS, "Server has successfully shut down. All connections closed.", NULL, 0);
-
 
 	for (int i = 0; i < _nb_servers; i++)
 		delete _servers[i];

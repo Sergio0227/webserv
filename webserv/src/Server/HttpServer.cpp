@@ -54,6 +54,7 @@ bool HttpServer::handleRequest(int client_fd)
 	readRequest(info);
 	if (info.file_uploaded)
 	{
+		_client_info.erase(client_fd);
 		return true;
 	}
 	if (!info.close_connection)
@@ -63,8 +64,13 @@ bool HttpServer::handleRequest(int client_fd)
 		if (_debug)
 			logMessage(DEBUG, "Client request failed.", &info, 2);
 		handleErrorResponse(info);
+		close(client_fd);
+		if (_debug)
+			logMessage(DEBUG, "Connection closed", &_client_info[client_fd], 0);
+		_client_info.erase(client_fd);
 		return false;
 	}
+	_client_info.erase(client_fd);
 	return true;
 }
 
@@ -76,7 +82,6 @@ void HttpServer::readRequest(ClientInfo &info)
 	int bytes_read = 0;
 	size_t body_size = 0;
 	size_t total_read = 0;
-	info.info.request.clear();
 
 	while (true)
 	{
@@ -98,7 +103,7 @@ void HttpServer::readRequest(ClientInfo &info)
 				setStatus(info, 413), info.close_connection = true;
 				return ;
 			}
-			if (info.close_connection || body_size == 0)
+			if (info.close_connection)
 				return ;
 			total_read = info.info.request.size() - 2;
 			break;
@@ -116,7 +121,7 @@ void HttpServer::readRequest(ClientInfo &info)
 		total_read += bytes_read;
 	}
 	//std::cout << "Request read: " << info.info.request << std::endl; //uncomment this to see raw request body from client
-	if (info.info.request.size() != 0)
+	if (info.info.request.size() != 2)
 		parseRequestBody(info);
 	info.info.request.clear();
 }
@@ -169,7 +174,6 @@ void HttpServer::handleErrorResponse(ClientInfo &info)
 	body_path += ".html";
 	std::string body = parseFileToString(body_path.c_str());
 	sendHttpResponse(info, NULL, "text/html", body);
-	closeConnection(info.fd);
 }
 
 //parses the Client-Request-Header to a map<string, string>
@@ -306,14 +310,12 @@ void HttpServer::sendHttpResponse(ClientInfo &info, const char *location, const 
 	std::string status_code_str = oss.str();
 	oss.str("");
 	oss.clear();
+	oss << body.size();
+	std::string body_len = oss.str();
 	std::string response = "HTTP/1.1 " + status_code_str + " " + getStatusMessage(info.status_code) + "\r\n";
 	if (content_type != NULL)
-	{
-		oss << body.size();
-		std::string body_len = oss.str();
 		response += "Content-Type: " + std::string(content_type) + "\r\n";
-		response += "Content-Length: " + body_len + "\r\n";
-	}
+	response += "Content-Length: " + body_len + "\r\n";
 	response += "Connection: keep-alive\r\n";
 	if (location != NULL)
 		response += "Location: " + std::string(location) + "\r\n";
@@ -349,19 +351,11 @@ bool HttpServer::pathExists(std::string &path)
 	std::string full_path(_conf->getRoot());
 
 	full_path += path;
-	// if (path == "/register" || path == "/login" || path == "/upload")
-	// 	return true;
+	if (path == "/register" || path == "/login" || path == "/upload")
+		return true;
 	if (!access(full_path.c_str(), F_OK))
 		return true;
 	else return false;
-}
-
-void HttpServer::closeConnection(int fd)
-{
-	if (_debug)
-		logMessage(DEBUG, "Connection closed", &_client_info[fd], 0);
-	_client_info.erase(fd);
-	close(fd);
 }
 //examples of path requests:
 //ex: / -> root/index.html

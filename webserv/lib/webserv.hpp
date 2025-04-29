@@ -25,7 +25,7 @@
 #define ORANGE "\033[38;5;214m"
 #define RESET "\033[0m"
 #define BACKLOG 5
-#define MAX_CONTENT_LENGTH 300000 //300kb maxbody if maxbody doesnt exist in config
+#define MAX_CONTENT_LENGTH 1000000 //1mb maxbody if maxbody doesnt exist in config
 
 /*
 ---Function Prototypes in Header----
