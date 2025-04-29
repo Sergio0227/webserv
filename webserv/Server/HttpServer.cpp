@@ -65,8 +65,6 @@ bool HttpServer::handleRequest(int client_fd)
 		handleErrorResponse(info);
 		return false;
 	}
-	// info.reset();
-	//_client_info.erase(client_fd);
 	return true;
 }
 
@@ -75,9 +73,10 @@ bool HttpServer::handleRequest(int client_fd)
 void HttpServer::readRequest(ClientInfo &info)
 {
 	char buffer[1024];
-	int bytes_read;
-	size_t body_size;
+	int bytes_read = 0;
+	size_t body_size = 0;
 	size_t total_read = 0;
+	info.info.request.clear();
 
 	while (true)
 	{
@@ -117,7 +116,9 @@ void HttpServer::readRequest(ClientInfo &info)
 		total_read += bytes_read;
 	}
 	//std::cout << "Request read: " << info.info.request << std::endl; //uncomment this to see raw request body from client
-	parseRequestBody(info);
+	if (info.info.request.size() != 0)
+		parseRequestBody(info);
+	info.info.request.clear();
 }
 
 //parses method, path, version, and checks for errors
@@ -210,7 +211,6 @@ void HttpServer::parseRequestBody(ClientInfo& info)
 	std::string &body_ref = info.info.body.body_str;
 
 	body_ref = req.substr(2, req.size());
-	req.clear();
 	if (info.info.headers["Content-Type"] == "application/x-www-form-urlencoded")
 	{
 		int start = body_ref.find("email=") + 6;
@@ -349,8 +349,8 @@ bool HttpServer::pathExists(std::string &path)
 	std::string full_path(_conf->getRoot());
 
 	full_path += path;
-	if (path == "/register" || path == "/login" || path == "/upload")
-		return true;
+	// if (path == "/register" || path == "/login" || path == "/upload")
+	// 	return true;
 	if (!access(full_path.c_str(), F_OK))
 		return true;
 	else return false;
