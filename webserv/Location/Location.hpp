@@ -5,10 +5,13 @@
 
 #include "webserv.hpp"
 
+class Config;
+
 class Location {
 private:
     std::string                         _return_value;
     std::string                         _alias;
+    std::map<std::string, bool>         _allowed_methods;
     unsigned long			    		_client_max_body_size;
     std::map<short, std::string>    	_error_pages;
     std::string	    					_index;
@@ -18,15 +21,17 @@ private:
 
 public:
     Location();
+    Location(Location &ref);
     ~Location();
 
     // Setters
-    void setReturnValue(std::string& return_value);
     void setAlias(std::string& alias);
     void setRoot(std::string& root);
     void setClientMaxBodySize(std::string& client_max_body_size);
+    void setReturnValue(std::string& return_value);
     void setIndex(std::string& index);
     void setAutoindex(std::string& autoindex);
+    void setAllowedMethods(std::string& allowed_methods);
     void setErrorPages(std::map<short, std::string>& error_pages);
 
     // Getters

@@ -275,3 +275,4 @@ void setStatus(ClientInfo &info, int code)
 	info.status_code = code;
 	info.status_msg = getStatusMessage(code);
 }
+
