@@ -9,7 +9,8 @@ Brain::Brain(std::vector<std::string>& config_file)
     this->_locations_keys.resize(0);
     splitServers(config_file);
 	initServerConfigs();
-	HttpServer(_server_conf[0], static_cast<int>(_server_conf[0]->getPort()),_server_conf[0]->getServerName(),  BACKLOG, true);
+    Location *loc = this->_server_conf[0]->getLocation(this->_locations_keys[0]);
+    std::cout << loc->getPath();
 }
 
 Brain::~Brain()
@@ -103,10 +104,11 @@ void Brain::parseConfigFile(int server_index)
 void Brain::parseLocation(size_t *i, int server_index, std::string location_name)
 {
     std::string valid_params[] = {"root","index", "autoindex", "error_page", "alias", "allow_methods",
-        "return", "cgi_path", "cgi_ext"};
+        "client_max_body_size", "return", "cgi_path", "cgi_ext"};
 
     this->_locations_keys.push_back(location_name);
     Location ref_loc;
+    ref_loc.setPath(location_name);
     while (this->_config_files[server_index][++(*i)] != "}")
     {
         size_t j;
@@ -117,8 +119,20 @@ void Brain::parseLocation(size_t *i, int server_index, std::string location_name
                throw Config::ConfigException("Error: Wrong parameter near: " + param);
         if (param == "allow_methods")
             ref_loc.setAllowedMethods(value);
+        else if (param == "root")
+            ref_loc.setRoot(value);
+        else if (param == "index")
+            ref_loc.setIndex(value);
+        else if (param == "autoindex")
+            ref_loc.setAutoindex(value);
+        else if (param == "alias")
+            ref_loc.setAlias(value);
+        else if (param == "return")
+            ref_loc.setReturnValue(value);
+        else if (param == "client_max_body_size")
+            ref_loc.setClientMaxBodySize(value);
     }
-    //this->_server_conf[server_index]->setLocation(location_name, ref_loc);
+    this->_server_conf[server_index]->setLocation(location_name, ref_loc);
 }
 
 

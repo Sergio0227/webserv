@@ -9,6 +9,7 @@ class Config;
 
 class Location {
 private:
+    std::string                         _path;
     std::string                         _return_value;
     std::string                         _alias;
     std::map<std::string, bool>         _allowed_methods;
@@ -21,10 +22,11 @@ private:
 
 public:
     Location();
-    Location(Location &ref);
+    Location(const Location& ref);
     ~Location();
 
     // Setters
+    void setPath(std::string& path);
     void setAlias(std::string& alias);
     void setRoot(std::string& root);
     void setClientMaxBodySize(std::string& client_max_body_size);
@@ -35,6 +37,7 @@ public:
     void setErrorPages(std::map<short, std::string>& error_pages);
 
     // Getters
+    std::string getPath() const;
     std::string getReturnValue() const;
     std::string getAlias() const;
     std::string getRoot() const;

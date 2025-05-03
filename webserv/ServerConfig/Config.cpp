@@ -23,8 +23,8 @@ void Config::initErrorPages()
 
 void Config::setPort(std::string& port)
 {
-    static bool set = false;
-    if (set)
+    static void *set = NULL;
+    if (set == this)
         throw ConfigException("Duplicate Port declaration, only one allowed per server block");
     validParamtr(port);
     for (size_t i = 0; i < port.size(); ++i)
@@ -34,14 +34,14 @@ void Config::setPort(std::string& port)
     if (port_int < 1 || port_int > 65535)
         throw ConfigException("Invalid Port number");
     this->_port =   port_int;
-    set = true;
+    set = this;
 }
 
 
 void Config::setServerName(std::string& server_name)
 {
-    static bool set = false;
-    if (set)
+    static void *set = NULL;
+    if (set == this)
         throw ConfigException("Duplicate ServerName declaration, only one allowed per server block");
     validParamtr(server_name);
     if (server_name == "localhost")
@@ -49,13 +49,13 @@ void Config::setServerName(std::string& server_name)
     if (inet_addr(server_name.c_str()) == INADDR_NONE) //INADDR_NON is not a valid IPV4 address
          throw ConfigException("Invalid Host address");
     this->_server_name = server_name;
-    set = true;
+    set = this;
 }
 
 void Config::setRoot(std::string& root)
 {
-    static bool set = false;
-    if (set)
+    static void *set = NULL;
+    if (set == this)
         throw ConfigException("Duplicate Root declaration, only one allowed per server block");
     validParamtr(root);
  // //  if (!isDirectory(root))
@@ -63,13 +63,13 @@ void Config::setRoot(std::string& root)
  //   if (!hasReadAccess(root))
  //       throw ConfigException("Invalid Root, no permissions to open root folder");
     this->_root = root;
-    set = true;
+    set = this;
 }
 
 void Config::setClientMaxBodySize(std::string& client_max_body_size)
 {
-    static bool set = false;
-    if (set)
+    static void *set = NULL;
+    if (set == this)
         throw ConfigException("Duplicate ClientMaxBodySize declaration, only one allowed per server block");
     validParamtr(client_max_body_size);
     for (size_t i = 0; i < client_max_body_size.size(); ++i)
@@ -77,13 +77,13 @@ void Config::setClientMaxBodySize(std::string& client_max_body_size)
             throw ConfigException("Body size must contain only numeric values");
     int int_body_size = std::atoi(client_max_body_size.c_str());
     this->_client_max_body_size = int_body_size;
-    set = true;
+    set = this;
 }
 
 void Config::setIndex(std::string& index)
 {
-    static bool set = false;
-    if (set)
+    static void *set = NULL;
+    if (set == this)
         throw ConfigException("Duplicate Index declaration, only one allowed per server block");
     validParamtr(index);
  // //  if (!isRegularFile(index))
@@ -92,19 +92,19 @@ void Config::setIndex(std::string& index)
  //       throw ConfigException("Invalid Index, no permissions to open index file");
  //   std::string absRoot = realpath(_root.c_str(), NULL);
     this->_index = index;
-    set = true;
+    set = this;
 }
 
 void Config::setAutoindex(std::string& autoindex)
 {
-    static bool set = false;
-    if (set)
+    static void *set = NULL;
+    if (set == this)
         throw ConfigException("Duplicate Autoindex declaration, only one allowed per server block");
     validParamtr(autoindex);
     if (autoindex != "on" && autoindex != "off")
         throw ConfigException("Invalid Autoindex, Off or On expected");
     this->_autoindex = (autoindex == "on");
-    set = true;
+    set = this;
 }
 
 void Config::setLocation(std::string& location_name, Location& location)
@@ -152,6 +152,11 @@ const std::map<short, std::string>& Config::getErrorPages() const
 struct sockaddr_in Config::getServerAddress() const
 {
     return _server_address;
+}
+
+Location* Config::getLocation(std::string& location_name)
+{
+    return this->_locations[location_name];
 }
 
 void Config::validParamtr(std::string& paramtr)

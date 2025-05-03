@@ -29,6 +29,7 @@ class Config
 		bool getAutoindex() const;
 		const std::map<short, std::string>& getErrorPages() const;
 		std::string getRoot() const;
+		Location *getLocation(std::string &location_name);
 
 		// Setters
 		void setPort(std::string& port);
