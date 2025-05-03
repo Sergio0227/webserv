@@ -80,6 +80,7 @@ void Brain::setupServers()
 
 Brain::~Brain()
 {
+	int k;
 	for (int i = 0; i < _nb_servers; i++)
 		delete _server_conf[i];
 
@@ -87,20 +88,21 @@ Brain::~Brain()
 	{
 		if (FD_ISSET(i, &_cur_sockets))
 		{
-			// if (isServerFd(i))
-			// 	logMessage(INFO, "Server connection closed.", &_client_info[i], 0);
-			// else
-			// 	logMessage(INFO, "Client connection closed.", &_client_info[i], 0);
+			if ((k = isServerFd(i)) != INT_MAX)
+				logMessage(INFO, k, "Server connection closed.", NULL, 0);
+			else
+			{
+				HttpServer *server = _client_to_serv_map[i];
+				logMessage(INFO, server->getSocket(), "Client connection closed.", &server->getClientInfoElem(i), 0);
+			}
 			close(i);
 			FD_CLR(i, &_cur_sockets);
 		}
 	}
-	logMessage(SUCCESS, "Server has successfully shut down. All connections closed.", NULL, 0);
+	logMessage(SUCCESS, -1 , "Server has successfully shut down. All connections closed.", NULL, 0);
 
 	for (int i = 0; i < _nb_servers; i++)
 		delete _servers[i];
-
-	
 }
 
 void Brain::splitServers(std::vector<std::string> config_file)
@@ -154,33 +156,67 @@ void Brain::initServerConfigs()
 
 void Brain::parseConfigFile(int server_index)
 {
-	// std::string valid_params[] = {"server_name", "port", "root", "client_max_body_size", "index", "autoindex", "error_page"};
-	bool ignore = false;
+     std::string valid_params[] = {"server_name", "listen", "root", "client_max_body_size",
+        "index", "autoindex", "error_page", "location", "allow_methods"};
+    for (size_t i = 0; i < this->_config_files[server_index].size() ; i++)
+    {
+        size_t j;
+        std::string param = trim(this->_config_files[server_index][i].substr(0, this->_config_files[server_index][i].find(' ')));
+        if (this->_config_files[server_index][i].size() == param.size())
+            throw Config::ConfigException("Error: Wrong parameter near: " + param);
+        std::string value = trim(this->_config_files[server_index][i].substr(param.size() + 1, this->_config_files[server_index][i].size()));
+        if (param == "location")
+            parseLocation(&(++i), server_index, value);
+        for (j = 0; valid_params[j] != param; j++)
+            if (j > param.size() || value == ";")
+               throw Config::ConfigException("Error: Wrong parameter near: " + param);
+        if (param == "server_name")
+            this->_server_conf[server_index]->setServerName(value);
+        else if (param == "listen")
+            this->_server_conf[server_index]->setPort(value);
+        else if (param == "root")
+            this->_server_conf[server_index]->setRoot(value);
+        else if (param == "client_max_body_size")
+            this->_server_conf[server_index]->setClientMaxBodySize(value);
+        else if (param == "index")
+            this->_server_conf[server_index]->setIndex(value);
+        else if (param == "autoindex")
+            this->_server_conf[server_index]->setAutoindex(value);
+        }
+}
 
-	for (size_t i = 0; i < this->_config_files[server_index].size() ; i++)
-	{
-		if (this->_config_files[server_index][i] == "{")
-			ignore = true;
-		if (!ignore)
-		{
-			std::string param = this->_config_files[server_index][i].substr(0, this->_config_files[server_index][i].find(' '));
-			std::string value = this->_config_files[server_index][i].substr(param.size() + 1, this->_config_files[server_index][i].size());
-			if (param == "server_name")
-				this->_server_conf[server_index]->setServerName(value);
-			else if (param == "listen")
-				this->_server_conf[server_index]->setPort(value);
-			else if (param == "root")
-				this->_server_conf[server_index]->setRoot(value);
-			else if (param == "client_max_body_size")
-				this->_server_conf[server_index]->setClientMaxBodySize(value);
-			else if (param == "index")
-				this->_server_conf[server_index]->setIndex(value);
-			else if (param == "autoindex")
-				this->_server_conf[server_index]->setAutoindex(value);
-		}
-		if (this->_config_files[server_index][i] == "}")
-			ignore = false;
-	}
+void Brain::parseLocation(size_t *i, int server_index, std::string location_name)
+{
+    std::string valid_params[] = {"root","index", "autoindex", "error_page", "alias", "allow_methods",
+        "client_max_body_size", "return", "cgi_path", "cgi_ext"};
+
+    this->_locations_keys.push_back(location_name);
+    Location ref_loc;
+    ref_loc.setPath(location_name);
+    while (this->_config_files[server_index][++(*i)] != "}")
+    {
+        size_t j;
+        std::string param = trim(this->_config_files[server_index][*i].substr(0, this->_config_files[server_index][*i].find(' ')));
+        std::string value= trim(this->_config_files[server_index][*i].substr(param.size() + 1, this->_config_files[server_index][*i].size()));
+        for (j = 0; valid_params[j] != param; j++)
+            if (j > param.size())
+               throw Config::ConfigException("Error: Wrong parameter near: " + param);
+        if (param == "allow_methods")
+            ref_loc.setAllowedMethods(value);
+        else if (param == "root")
+            ref_loc.setRoot(value);
+        else if (param == "index")
+            ref_loc.setIndex(value);
+        else if (param == "autoindex")
+            ref_loc.setAutoindex(value);
+        else if (param == "alias")
+            ref_loc.setAlias(value);
+        else if (param == "return")
+            ref_loc.setReturnValue(value);
+        else if (param == "client_max_body_size")
+            ref_loc.setClientMaxBodySize(value);
+    }
+    this->_server_conf[server_index]->setLocation(location_name, ref_loc);
 }
 
 int Brain::getNbServers()

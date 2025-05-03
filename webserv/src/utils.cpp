@@ -73,44 +73,60 @@ std::string getCurrentTime()
 	return (ss.str());
 }
 
-void logMessage(LogType level, const std::string& message, ClientInfo *ptr_info, int flag)
+void logMessage(LogType level, int server_fd, const std::string& message, ClientInfo *ptr_info, int flag)
 {
+	std::string str_fd = "";
+	std::ostringstream oss;
+	if (server_fd > 0)
+	{
+		oss << server_fd;
+		str_fd = oss.str();
+		oss.clear();
+		oss.str("");
+	}
 	std::string category, color;
 	std::pair<std::string, std::string> pair = getPairLog(level);
 	category = pair.first;
 	color = pair.second;
 	while (category.size() != 14)
 		category.append(" ");
-	if (ptr_info == NULL)
-		std::cout << color << category << RESET << getCurrentTime() << "\t-\t" << message << std::endl;
-	else
+
+	std::string msg(color + category + RESET);
+	msg.append(getCurrentTime());
+	msg.append("\t-\t");
+	if (server_fd > 0)
 	{
-		if (flag == 0)
+		msg.append("Server_ID: ");
+		msg.append(str_fd);
+		msg.append(" | ");
+		if (ptr_info != NULL)
 		{
-			std::cout << color << category << RESET << getCurrentTime()
-				<< "\t-\t" << message << " -> "
-				<< "(IP: " << inet_ntoa(ptr_info->addr.sin_addr) << " | "
-				<< "PORT: " << ntohs(ptr_info->addr.sin_port) << ")"
-				<< std::endl;
-		}
-		else if (flag == 1)
-		{
-			std::cout << color << category << RESET << getCurrentTime()
-				<< "\t-\t" << message << " -> "
-				<< "(IP: " << inet_ntoa(ptr_info->addr.sin_addr) << " | "
-				<< "PORT: " << ntohs(ptr_info->addr.sin_port) << ")"
-				<< "{ Method: " << ptr_info->info.method << " | Path: " << ptr_info->info.path << " }" << std::endl;
-		}
-		else if (flag == 2)
-		{
-			std::cout << color << category << RESET << getCurrentTime()
-				<< "\t-\t" << message << " -> "
-				<< "(IP: " << inet_ntoa(ptr_info->addr.sin_addr) << " | "
-				<< "PORT: " << ntohs(ptr_info->addr.sin_port) << ")  |  "
-				<< "Request -> (Method: " << getStringMethod(ptr_info->info.method) << " | Path: " << ptr_info->info.path << ")"
-				<< "  |  Server: (Code: " << ptr_info->status_code << " | Msg: " << ptr_info->status_msg << ")" << std::endl;
+			msg.append("Client_ID: ");
+			oss << ptr_info->fd;
+			msg.append(oss.str());
+			oss.clear();
+			oss.str("");
+			msg.append(" | ");
 		}
 	}
+	msg.append(message);
+	if (ptr_info != NULL)
+	{
+		if (flag == 1)
+		{
+			msg.append("Request -> (Method: ");
+			msg.append(getStringMethod(ptr_info->info.method));
+			msg.append(" | Path: ");
+			msg.append(ptr_info->info.path);
+			msg.append(")  |  Server: (Code: ");
+			oss << ptr_info->status_code;
+			msg.append(oss.str());
+			msg.append(" | Msg: ");
+			msg.append(ptr_info->status_msg);
+			msg.append(")");
+		}
+	}
+	std::cout << msg << std::endl;
 }
 
 std::pair<std::string, std::string> getPairLog(LogType level)
@@ -242,34 +258,7 @@ bool hasReadAccess(const std::string& path)
 {
 	return access(path.c_str(), R_OK | X_OK) == 0;
 }
-void BodyInfo::reset()
-{
-	body_str.clear();
-	email.clear();
-	passw.clear();
-}
 
-void RequestInfo::reset()
-{
-	request.clear();
-	http_version.clear();
-	path.clear();
-	headers.clear();
-	boundary.clear();
-
-	body.reset();
-}
-
-void ClientInfo::reset()
-{
-	status_code = 0;
-	status_msg.clear();
-	close_connection = false;
-	keep_alive = false;
-	file_uploaded = false;
-
-	info.reset();
-}
 void setStatus(ClientInfo &info, int code)
 {
 	info.status_code = code;

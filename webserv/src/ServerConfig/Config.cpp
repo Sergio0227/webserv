@@ -82,6 +82,11 @@ void Config::setAutoindex(std::string& autoindex)
     this->_autoindex = (autoindex == "on");
 }
 
+void Config::setLocation(std::string& location_name, Location& location)
+{
+    this->_locations[location_name] = new Location(location);
+}
+
 
 uint16_t Config::getPort() const
 {

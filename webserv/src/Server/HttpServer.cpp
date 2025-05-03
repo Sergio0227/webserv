@@ -19,7 +19,7 @@ HttpServer::HttpServer(Config *conf, short port, std::string ip, int backlog, bo
 		errorHandler("Bind");
 	if (listen(_socket_fd, _backlog) < 0)
 		errorHandler("Listen");
-	logMessage(SUCCESS, "Server successfully set up and listening for incoming connections.", NULL, 0);
+	logMessage(SUCCESS, _socket_fd ,"Server successfully set up and listening for incoming connections.", NULL, 0);
 }
 
 HttpServer::~HttpServer()
@@ -35,11 +35,13 @@ int HttpServer::acceptConnections()
 
 	if ((client_fd = accept(_socket_fd, (struct sockaddr *)&client_addr, (socklen_t *)&addr_len)) < 0)
 	{
-		logMessage(ERROR, "Error accepting client connection. Continuing...", NULL, 0);
+		logMessage(ERROR, _socket_fd, "Error accepting client connection. Continuing...", NULL, 0);
 		return -1;
 	}
 	_client_info[client_fd].addr = client_addr;
-	logMessage(INFO, "New client connected.", &_client_info[client_fd], 0);
+	_client_info[client_fd].fd = client_fd;
+
+	logMessage(INFO, _socket_fd, "New client connected.", &_client_info[client_fd], 0);
 	return client_fd;
 }
 
@@ -48,13 +50,12 @@ int HttpServer::acceptConnections()
 bool HttpServer::handleRequest(int client_fd)
 {
 	ClientInfo &info = _client_info[client_fd];
-	info.fd = client_fd;
 	info.close_connection = false;
 
 	readRequest(info);
 	if (info.file_uploaded)
 	{
-		_client_info.erase(client_fd);
+		_client_info[client_fd].reset();
 		return true;
 	}
 	if (!info.close_connection)
@@ -62,15 +63,15 @@ bool HttpServer::handleRequest(int client_fd)
 	if (info.close_connection)
 	{
 		if (_debug)
-			logMessage(DEBUG, "Client request failed.", &info, 2);
+			logMessage(DEBUG, _socket_fd,"Client request failed.", &info, 1);
 		handleErrorResponse(info);
 		close(client_fd);
 		if (_debug)
-			logMessage(DEBUG, "Connection closed", &_client_info[client_fd], 0);
+			logMessage(DEBUG,  _socket_fd, "Connection closed", &_client_info[client_fd], 0);
 		_client_info.erase(client_fd);
 		return false;
 	}
-	_client_info.erase(client_fd);
+	_client_info[client_fd].reset();
 	return true;
 }
 
@@ -298,7 +299,7 @@ void HttpServer::executeResponse(ClientInfo &info)
 		sendHttpResponse(info, NULL, NULL, empty_string);
 	}
 	if (_debug)
-		logMessage(DEBUG, "Client", &info, 2);
+		logMessage(DEBUG, _socket_fd, "", &info, 1);
 }
 
 //todo error function for send
@@ -424,6 +425,11 @@ bool HttpServer::deleteEmail(std::string &path, const char *filePath)
 	ofile << oss_buff.str();
 	ofile.close();
 	return true;
+}
+
+ClientInfo &HttpServer::getClientInfoElem(int fd)
+{
+	return (_client_info[fd]);
 }
 //serving images currently not used
 

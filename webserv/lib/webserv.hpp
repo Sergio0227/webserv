@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ClientInfo.hpp"
 #include <iostream>
 #include <stdexcept>
 #include <unistd.h>
@@ -86,16 +87,11 @@ inet_aton() converts an ipv4 char * like "127.0.0.1" to an int, can handle ipv4
 inet_pton() converts ipv4 or ipv6 char * to an int and is more modern than aton
 
 */
+
+
 extern int	g_flag;
 
-enum Methods
-{
-	GET,
-	POST,
-	DELETE,
-	PUT,
-	UNKNOWN_METHOD
-};
+
 
 enum LogType
 {
@@ -105,40 +101,7 @@ enum LogType
 	SUCCESS
 };
 
-struct BodyInfo
-{
-	std::string	body_str;
-	std::string	email;
-	std::string	passw;
-	void reset();
-};
-struct RequestInfo
-{
-	std::string							request;
-	Methods								method;
-	std::string							http_version;
-	std::string							path;
-
-	BodyInfo							body;
-	std::map<std::string, std::string>	headers;
-	std::string boundary;
-	void reset();
-};
-struct ClientInfo
-{
-	int			fd;
-	int			status_code;
-	std::string	status_msg;
-	bool		close_connection;
-	sockaddr_in	addr;
-	time_t		connection_time;
-    bool		keep_alive;
-	RequestInfo	info;
-	bool file_uploaded;
-	void reset();
-};
-
-void		logMessage(LogType level, const std::string& message, ClientInfo *ptr_info, int flag);
+void logMessage(LogType level, int server_fd, const std::string& message, ClientInfo *ptr_info, int flag);
 void		printClientInfo(ClientInfo &info);
 
 Methods getEnumMethod(std::string &method);
@@ -165,5 +128,9 @@ std::string getCurrentTime();
 std::string							getStatusMessage(int code);
 std::pair<std::string, std::string> getPairLog(LogType level);
 
-//formatter
+
+
+// formatter
 std::vector<std::string> storeFormatedFile(std::string config_file_path);
+std::string trim(const std::string &str);
+

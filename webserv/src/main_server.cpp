@@ -6,7 +6,7 @@ void handleShutdown(int signal)
 {
 	(void)signal;
 	std::cout << std::endl;
-	logMessage(INFO, "Server Shutdown Initiated.", NULL, 0);
+	logMessage(INFO, -1, "Server Shutdown Initiated.", NULL, 0);
 	g_flag = 0;
 }
 

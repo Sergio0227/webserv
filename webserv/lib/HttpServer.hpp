@@ -28,7 +28,9 @@ class HttpServer : public Socket
 		std::string	extractBody(ClientInfo &info);
 		void uploadFile(ClientInfo &info, std::string data, const char *path);
 		bool deleteEmail(std::string &path, const char *filePath);
+
 		
+
 		void readRequest(ClientInfo &info);
 		std::string readRequestPOST(ClientInfo &info);
 		void sendHttpResponse(ClientInfo &info, const char *location, const char *content_type, std::string &body);
@@ -42,6 +44,7 @@ class HttpServer : public Socket
 		int getSocket();
 		int		acceptConnections();
 		bool	handleRequest(int client_fd);
+		ClientInfo &getClientInfoElem(int fd);
 };
 
 

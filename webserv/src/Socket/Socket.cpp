@@ -34,6 +34,6 @@ void Socket::errorHandler(const char *function_name)
 	std::string error_msg(function_name);
 	error_msg += ": ";
 	error_msg += strerror(errno);
-	logMessage(ERROR, error_msg, NULL, 0);
+	logMessage(ERROR, -1, error_msg, NULL, 0);
 	throw std::runtime_error("");
 }

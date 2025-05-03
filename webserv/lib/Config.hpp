@@ -13,7 +13,7 @@ class Config
 		std::string	    					_index;
 		bool	    						_autoindex;
 		std::string					    	_root;
-		std::map<std::string, Location>     _locations;
+		std::map<std::string, Location*>     _locations;
 
 	public:
 		Config();
@@ -39,9 +39,10 @@ class Config
 		void setIndex(std::string& index);
 		void setAutoindex(std::string& autoindex);
 		void setErrorPages(std::map<short, std::string>& error_pages);
+		void setLocation(std::string& location_name, Location& location);
 
 		// Helpers
-		void validParamtr(std::string &paramtr);
+		static void validParamtr(std::string &paramtr);
 		void initErrorPages();
 
 

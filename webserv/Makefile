@@ -5,8 +5,8 @@ SERVER_SRC = 	src/Server/HttpServer.cpp \
 				src/formatter.cpp \
 				src/Location/Location.cpp \
 				src/Brain/Brain.cpp \
-				src/ServerConfig/Config.cpp
-
+				src/ServerConfig/Config.cpp \
+				src/ClientInfo/ClientInfo.cpp
 SERVER_OBJ = $(SERVER_SRC:.cpp=.o)
 
 SERVER_EXEC = server
