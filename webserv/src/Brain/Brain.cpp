@@ -89,7 +89,7 @@ Brain::~Brain()
 		if (FD_ISSET(i, &_cur_sockets))
 		{
 			if ((k = isServerFd(i)) != INT_MAX)
-				logMessage(INFO, k, "Server connection closed.", NULL, 0);
+				logMessage(INFO, i, "Server connection closed.", NULL, 0);
 			else
 			{
 				HttpServer *server = _client_to_serv_map[i];
@@ -99,8 +99,7 @@ Brain::~Brain()
 			FD_CLR(i, &_cur_sockets);
 		}
 	}
-	logMessage(SUCCESS, -1 , "Server has successfully shut down. All connections closed.", NULL, 0);
-
+	logMessage(SUCCESS, -1 , "Server(s) have been successfully shut down. All connections closed.", NULL, 0);
 	for (int i = 0; i < _nb_servers; i++)
 		delete _servers[i];
 }

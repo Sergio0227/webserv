@@ -21,7 +21,7 @@ class HttpServer : public Socket
 		void	handleErrorResponse(ClientInfo &info);
 		void	executeResponse(ClientInfo &info);
 		
-		void serveImage(int client_fd, const std::string &filePath);
+		//void serveImage(int client_fd, const std::string &filePath);
 		
 		
 
@@ -36,7 +36,8 @@ class HttpServer : public Socket
 		void sendHttpResponse(ClientInfo &info, const char *location, const char *content_type, std::string &body);
 		std::string parseFileToString(const char *filename);
 
-		bool pathExists(std::string &path);
+		int checkPath(ClientInfo &info, std::string &path);
+
 	
 	public:
 		HttpServer(Config *conf, short port, std::string ip, int backlog, bool debug);

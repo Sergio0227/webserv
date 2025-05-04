@@ -13,7 +13,7 @@ class Config
 		std::string	    					_index;
 		bool	    						_autoindex;
 		std::string					    	_root;
-		std::map<std::string, Location*>     _locations;
+		std::map<std::string, Location*>    _locations;
 
 	public:
 		Config();
@@ -29,6 +29,7 @@ class Config
 		bool getAutoindex() const;
 		const std::map<short, std::string>& getErrorPages() const;
 		std::string getRoot() const;
+		Location *getLocation(std::string &location_name);
 
 		// Setters
 		void setPort(std::string& port);

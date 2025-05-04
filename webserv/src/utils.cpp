@@ -153,6 +153,7 @@ std::string getStatusMessage(int code)
 	status_map[409] = "Conflict";
 	status_map[413] = "Payload Too Large";
 	status_map[415] = "Unsupported Media Type";
+	status_map[500] = "Internal Server Error";
 	status_map[505] = "HTTP Version Not Supported";
 	
     if (status_map.find(code) != status_map.end())

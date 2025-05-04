@@ -1,6 +1,8 @@
 #pragma once
 
 #include "ClientInfo.hpp"
+#include "CGI.hpp"
+
 #include <iostream>
 #include <stdexcept>
 #include <unistd.h>
@@ -88,10 +90,7 @@ inet_pton() converts ipv4 or ipv6 char * to an int and is more modern than aton
 
 */
 
-
 extern int	g_flag;
-
-
 
 enum LogType
 {

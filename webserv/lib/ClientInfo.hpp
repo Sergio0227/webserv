@@ -17,6 +17,7 @@ enum Methods
 
 struct BodyInfo
 {
+	size_t body_size;
 	std::string	body_str;
 	std::string	email;
 	std::string	passw;
@@ -29,7 +30,8 @@ struct RequestInfo
 	Methods								method;
 	std::string							http_version;
 	std::string							path;
-
+	std::string absolute_path;
+	std::string							query;
 	BodyInfo							body;
 	std::map<std::string, std::string>	headers;
 	std::string boundary;
@@ -39,6 +41,7 @@ struct RequestInfo
 struct ClientInfo
 {
 	int			fd;
+	bool		run_cgi;
 	int			status_code;
 	std::string	status_msg;
 	bool		close_connection;

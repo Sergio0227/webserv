@@ -1,9 +1,6 @@
 #pragma once
-
-#ifndef LOCATION_HPP
-#define LOCATION_HPP
-
-#include "webserv.hpp"
+#include <string>
+#include <map>
 
 class Config;
 
@@ -23,7 +20,7 @@ class Location
 
     public:
         Location();
-        Location(Location &ref);
+        Location(const Location& ref);
         ~Location();
 
         // Setters
@@ -34,9 +31,10 @@ class Location
         void setIndex(std::string& index);
         void setAutoindex(std::string& autoindex);
         void setAllowedMethods(std::string& allowed_methods);
-        void setErrorPages(std::map<short, std::string>& error_pages);
+		std::string getPath() const;
+		void setErrorPages(std::map<short, std::string> &error_pages);
 
-        // Getters
+		// Getters
         std::string getReturnValue() const;
         std::string getAlias() const;
         std::string getRoot() const;
@@ -49,5 +47,3 @@ class Location
         void initErrorPages();
         void setPath(std::string &path);
 };
-
-#endif //LOCATION_HPP
