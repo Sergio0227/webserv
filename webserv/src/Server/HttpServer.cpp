@@ -252,8 +252,7 @@ void HttpServer::executeResponse(ClientInfo &info)
 		
 		if (info.run_cgi)
 		{
-			
-			//CGI(info);
+			//CGI cgi(info);
 		}
 		else
 		{
@@ -265,6 +264,10 @@ void HttpServer::executeResponse(ClientInfo &info)
 	}
 	else if (meth == POST)
 	{
+		if (info.run_cgi)
+		{
+			//CGI cgi(info);
+		}
 
 		if (info.info.path == "/register")
 		{

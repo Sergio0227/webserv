@@ -2,6 +2,23 @@
 
 import os
 import sys
+import cgi
+
+
+def emailFound(email, filename):
+    try:
+        with open(filename, 'r') as file:
+            for line in file:
+                if email in line:
+                    return True
+        return False
+    except FileNotFoundError:
+        print(f"The file {filename} does not exist.")
+        return False
+
+def sendConflict():
+    
+
 
 def parse_get():
     query = os.environ.get('QUERY_STRING', '')
@@ -17,44 +34,50 @@ def parse_post():
 def handle_register(params):
     email = params.get('email')
     password = params.get('password')
-    print("Registering:", email)
-    # Add your logic here
+    if (emailFound()):
+        sendConflict()
+    else:
+        saveCredentials()
+        sendRegistrationSuccess()
 
 def handle_login(params):
     email = params.get('email')
     password = params.get('password')
     print("Logging in:", email)
-    # Add your logic here
+
 
 def handle_upload(params):
     filename = params.get('filename')
     filedata = params.get('filedata')
     print("Uploading:", filename)
-    # Add your logic here
 
 def handle_delete(params):
     account = params.get('account')
     print("Deleting account:", account)
-    # Add your logic here
 
+
+
+image_path = "var/www/data/images"
+csv_path = "var/www/data/users.csv"
 method = os.environ.get('REQUEST_METHOD', '')
+form = cgi.FieldStorage()
+action = form.getvalue('action')
 if method == 'GET':
     params = parse_get()
-    action = params.get('action')
     if action == 'register':
-        handle_register(params)
+        handle_register(params, csv_path)
     elif action == 'login':
-        handle_login(params)
+        handle_login(params, csv_path)
     else:
         print("Unknown GET action")
 
 elif method == 'POST':
     params = parse_post()
-    handle_upload(params)
+    handle_upload(params, image_path)
 
 elif method == 'DELETE':
     params = parse_get()
-    handle_delete(params)
+    handle_delete(params, csv_path)
 
 else:
     print("Unsupported method:", method)

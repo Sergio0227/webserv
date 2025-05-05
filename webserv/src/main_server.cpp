@@ -26,6 +26,7 @@ int main(int argc, char *argv[])
 		std::vector<std::string> configFile;
 		configFile = storeFormatedFile(config_file_path);
 		Brain brain(configFile);
+		//brain.handleConnections();
 	}
 	catch (std::exception &e)
 	{
