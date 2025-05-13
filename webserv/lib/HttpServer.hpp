@@ -36,15 +36,17 @@ class HttpServer : public Socket
 		void sendHttpResponse(ClientInfo &info, const char *location, const char *content_type, std::string &body);
 		std::string parseFileToString(const char *filename);
 
-		int checkPath(ClientInfo &info, std::string &path);
+		bool checkPath(ClientInfo &info, std::string &path);
+		bool checkBodySize(ClientInfo &info);
 
 	
 	public:
 		HttpServer(Config *conf, short port, std::string ip, int backlog, bool debug);
 		~HttpServer();
 		int getSocket();
-		int		acceptConnections();
-		bool	handleRequest(int client_fd);
+        
+        int acceptConnections();
+        bool	handleRequest(int client_fd);
 		ClientInfo &getClientInfoElem(int fd);
 };
 

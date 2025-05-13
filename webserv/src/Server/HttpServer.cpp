@@ -58,22 +58,14 @@ bool HttpServer::handleRequest(int client_fd)
 		executeResponse(info);
 	if (info.close_connection)
 	{
-		if (info.status_code >= 400)
-		{
-			if (_debug)
-				logMessage(DEBUG, _socket_fd,"Client request failed.", &info, 1);
-			handleErrorResponse(info);
-			close(client_fd);
-			if (_debug)
-				logMessage(DEBUG,  _socket_fd, "Connection closed", &_client_info[client_fd], 0);
-			_client_info.erase(client_fd);
-			return false;
-		}
-		else
-		{
-			std::string empty_body = "";
-			sendHttpResponse(info, NULL, NULL, empty_body);
-		}
+		if (_debug)
+			logMessage(DEBUG, _socket_fd,"Client request failed.", &info, 1);
+		handleErrorResponse(info);
+		close(client_fd);
+		if (_debug)
+			logMessage(DEBUG,  _socket_fd, "Connection closed", &_client_info[client_fd], 0);
+		_client_info.erase(client_fd);
+		return false;
 	}
 	_client_info[client_fd].reset();
 	return true;
@@ -102,7 +94,7 @@ void HttpServer::readRequest(ClientInfo &info)
 			if (info.close_connection)
 				return ;
 			info.info.body.body_size = parseRequestHeader(info);
-			if (info.info.body.body_size > _conf->getClientMaxBodySize())
+			if (!checkBodySize(info))
 			{
 				setStatus(info, 413), info.close_connection = true;
 				return ;
@@ -126,6 +118,8 @@ void HttpServer::readRequest(ClientInfo &info)
 		info.info.body.body_str.append(buffer, bytes_read);
 		total_read += bytes_read;
 	}
+	if (info.info.body.body_size != 0)
+		parseRequestBody(info);
 }
 
 //parses method, path, version, and checks for errors
@@ -143,15 +137,9 @@ void HttpServer::parseRequestLine(ClientInfo& info)
 	req = req.substr(i+1, req.size());
 	i = req.find(' ');
 	std::string path = req.substr(0, i);
-	int status;
-	if ((status = checkPath(info, path)) == 0)
+	if (checkPath(info, path) == false)
 	{
 		setStatus(info, 404), info.close_connection = true;
-		return ;
-	}
-	else if (status == 2)
-	{
-		setStatus(info, 204), info.close_connection = true;
 		return ;
 	}
 	req = req.substr(i+1, req.size());
@@ -174,6 +162,7 @@ void HttpServer::parseRequestBody(ClientInfo& info)
 	std::string &body_ref = info.info.body.body_str;
 
 	body_ref = req.substr(2, req.size());
+	std::cout << "info.info.headers[\"Content-Type\"] :" << info.info.headers["Content-Type"] << std::endl;
 	if (info.info.headers["Content-Type"] == "application/x-www-form-urlencoded")
 	{
 		int start = body_ref.find("email=") + 6;
@@ -278,9 +267,8 @@ void HttpServer::executeResponse(ClientInfo &info)
 			}
 			setStatus(info, 303);
 			std::string empty_string = "";
-			sendHttpResponse(info, "/login", NULL, empty_string);
-			
 			storeCredential(info.info.body, "var/www/data/users.csv");
+			sendHttpResponse(info, "/login.html", NULL, empty_string);
 		}
 		else if (info.info.path == "/login")
 		{
@@ -291,7 +279,7 @@ void HttpServer::executeResponse(ClientInfo &info)
 			}
 			setStatus(info, 303);
 			std::string empty_string = "";
-			sendHttpResponse(info, "/user", NULL, empty_string);
+			sendHttpResponse(info, "/user.html", NULL, empty_string);
 		}
 		else if (info.info.path == "/upload")
 		{
@@ -368,15 +356,19 @@ std::string HttpServer::parseFileToString(const char *filename)
 }
 
 //more generic attempt
-int HttpServer::checkPath(ClientInfo &info, std::string &path)
+bool HttpServer::checkPath(ClientInfo &info, std::string &path)
 {
 	std::string full_path;
 	bool flag = false;
 
+	//handle built-in functionalities, register, upload, login -> webserver handles this
+	std::cout << "path: " << path << std::endl;
+	
+	if ((path == "/register" || path == "/upload" || path == "/login") && _conf->getLocation(path) != NULL)
+		return 1;
 	//filter out unnecessary requests
 	if (path == "/.well-known/appspecific/com.chrome.devtools.json" || path.find("favicon") != std::string::npos)
-		return 2;
-	
+		return 0;
 	//handle path based on query
 	if (path.find("?") != std::string::npos)
 	{
@@ -519,4 +511,17 @@ ClientInfo &HttpServer::getClientInfoElem(int fd)
 int HttpServer::getSocket()
 {
 	return _socket_fd;
+}
+
+bool HttpServer::checkBodySize(ClientInfo &info)
+{
+	Location *loc = _conf->getLocation(info.info.path);
+	size_t size;
+	if (loc)
+		 size = loc->getClientMaxBodySize();
+	else
+		size = _conf->getClientMaxBodySize();
+	if (info.info.body.body_size > size) 
+		return false;
+	return true;
 }

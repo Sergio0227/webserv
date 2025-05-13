@@ -14,7 +14,7 @@
 			{
 				var formData = new FormData();
 				formData.append('file', file);
-				fetch('/cgi-bin',
+				fetch('/upload',
 				{
 					method: 'POST',
 					body: formData,
@@ -43,13 +43,16 @@
 		function deleteEmail()
 		{
 			const email = document.getElementById('emailToDelete').value;
+
 			if (!email)
 			{
 				alert("Please enter your email.");
 				return;
 			}
 
-			fetch(`/cgi-bin?email=${encodeURIComponent(email)}`,
+			const encodedEmail = encodeURIComponent(email);
+
+			fetch(`/delete?email=${encodedEmail}`,
 			{
 				method: 'DELETE'
 			})
@@ -62,7 +65,7 @@
 			{
 				alert("Error: " + error);
 			});
-		}
+	}
     </script>
 </head>
 <body>

@@ -170,3 +170,8 @@ std::string Location::getRoot() const {
 std::string Location::getIndex() const {
     return _index;
 }
+
+size_t Location::getClientMaxBodySize() const
+{
+    return _client_max_body_size;
+}
