@@ -265,3 +265,32 @@ void setStatus(ClientInfo &info, int code)
 	info.status_code = code;
 	info.status_msg = getStatusMessage(code);
 }
+
+std::string buildUploadFilename(std::string &data, const char *path)
+{
+	size_t start = data.find("filename=\"") + 10;
+	size_t end = data.find("\"", start);
+	std::string filename = data.substr(start, end - start);
+
+	start = filename.rfind(".");
+	end = filename.size();
+	std::string ext = filename.substr(start, end - start);
+	filename = filename.substr(0, start);
+
+	DIR* dir = opendir(path);
+	struct dirent* entry;
+	int count = 0;
+
+	if (!dir)
+		return "";
+	while ((entry = readdir(dir)) != NULL)
+	{
+		std::string name = entry->d_name;
+		if (name != "." && name != "..")
+			count++;
+	}
+	std::ostringstream oss;
+	oss << count;
+	filename += "_" + oss.str() + ext;
+	return (filename);
+}

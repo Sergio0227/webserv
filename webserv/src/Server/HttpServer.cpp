@@ -105,8 +105,7 @@ void HttpServer::readRequest(ClientInfo &info)
 			break;
 		}
 	}
-	if (total_read < info.info.body.body_size)
-		info.info.body.body_str = info.info.request.substr(2, info.info.request.size());
+	info.info.body.body_str = info.info.request.substr(2, info.info.request.size());
 	while (total_read < info.info.body.body_size)
 	{
 		bytes_read = recv(info.fd, buffer, sizeof(buffer) - 1, 0);
@@ -158,11 +157,8 @@ void HttpServer::parseRequestLine(ClientInfo& info)
 
 void HttpServer::parseRequestBody(ClientInfo& info)
 {
-	std::string &req = info.info.request;
 	std::string &body_ref = info.info.body.body_str;
 
-	body_ref = req.substr(2, req.size());
-	std::cout << "info.info.headers[\"Content-Type\"] :" << info.info.headers["Content-Type"] << std::endl;
 	if (info.info.headers["Content-Type"] == "application/x-www-form-urlencoded")
 	{
 		int start = body_ref.find("email=") + 6;
@@ -171,10 +167,7 @@ void HttpServer::parseRequestBody(ClientInfo& info)
 		info.info.body.passw = body_ref.substr(body_ref.find("password=") + 9, body_ref.size());
 	}
 	else if (info.info.headers["Content-Type"].find("multipart/form-data") != std::string::npos)
-	{
-		uploadFile(info, body_ref, "var/www/data/images");
 		info.file_uploaded = true;
-	}
 	else
 		info.status_code = 415, info.close_connection = true;
 }
@@ -238,7 +231,6 @@ void HttpServer::executeResponse(ClientInfo &info)
 
 	if (meth == GET)
 	{
-		
 		if (info.run_cgi)
 		{
 			//CGI cgi(info);
@@ -257,7 +249,6 @@ void HttpServer::executeResponse(ClientInfo &info)
 		{
 			//CGI cgi(info);
 		}
-
 		if (info.info.path == "/register")
 		{
 			if (emailExists(info))
@@ -281,8 +272,13 @@ void HttpServer::executeResponse(ClientInfo &info)
 			std::string empty_string = "";
 			sendHttpResponse(info, "/user.html", NULL, empty_string);
 		}
-		else if (info.info.path == "/upload")
+		else if (info.info.path == "/upload" && info.file_uploaded == true)
 		{
+			if (uploadFile(info, "var/www/data/images/"))
+			{
+				setStatus(info, 500), info.close_connection = true;
+				return ;
+			}
 			setStatus(info, 201);
 			std::string empty_string = "";
 			sendHttpResponse(info, NULL, NULL, empty_string);
@@ -295,7 +291,7 @@ void HttpServer::executeResponse(ClientInfo &info)
 			setStatus(info, 404), info.close_connection = true;
 			return ;
 		}
-		if (deleteEmail(info.info.path, "var/www/data/users.csv") == false)
+		if (deleteEmail(info, "var/www/data/users.csv") == false)
 		{
 			setStatus(info, 400);
 			std::string error_msg = "Invalid email";
@@ -303,8 +299,8 @@ void HttpServer::executeResponse(ClientInfo &info)
 			return;
 		}
 		setStatus(info, 200);
-		std::string empty_string = "";
-		sendHttpResponse(info, NULL, NULL, empty_string);
+		std::string msg = "Account successfully deleted";
+		sendHttpResponse(info, NULL, "text/plain", msg);
 	}
 	if (_debug)
 		logMessage(DEBUG, _socket_fd, "", &info, 1);
@@ -362,8 +358,6 @@ bool HttpServer::checkPath(ClientInfo &info, std::string &path)
 	bool flag = false;
 
 	//handle built-in functionalities, register, upload, login -> webserver handles this
-	std::cout << "path: " << path << std::endl;
-	
 	if ((path == "/register" || path == "/upload" || path == "/login") && _conf->getLocation(path) != NULL)
 		return 1;
 	//filter out unnecessary requests
@@ -420,7 +414,6 @@ bool HttpServer::checkPath(ClientInfo &info, std::string &path)
 				full_path += "/" + _conf->getIndex();
 		}
 	}
-	std::cout << full_path << std::endl;
 	if (!access(full_path.c_str(), F_OK))
 	{
 		info.info.absolute_path = full_path;
@@ -429,38 +422,38 @@ bool HttpServer::checkPath(ClientInfo &info, std::string &path)
 	else return 0;
 }
 
-void HttpServer::uploadFile(ClientInfo &info, std::string data, const char *path)
-{
-	size_t start = data.find("filename=\"") + 10;
-	size_t end = data.find("\"", start);
-	std::string filename = data.substr(start, end - start);
-	std::string fullPath = path + std::string("/") + filename;
 
-	start = data.find("\r\n\r\n") + 4;
-	end = data.find(info.info.boundary, start) - 4;	//-2: "--" +(-2): "\r\n" = 4
+
+int HttpServer::uploadFile(ClientInfo &info, const char *path)
+{
+	std::string data = info.info.body.body_str; 
+	std::string filename = buildUploadFilename(data, path);
+	std::string fullPath = path + std::string("/") + filename;
+	size_t start = data.find("\r\n\r\n") + 4;
+	size_t end = data.find(info.info.boundary, start) - 4;	//-2: "--" +(-2): "\r\n" = 4
 	std::string binary_data = data.substr(start, end - start);
 
-	// todo if name exist send error
 	std::fstream output(fullPath.c_str(), std::ios::binary | std::ios::out);
 	
 	if (!output.is_open())
-		return;
+		return 1;
 	output.write(binary_data.data(), binary_data.size());
 	output.close();
-	executeResponse(info);
+	return 0;
 }
 
-bool HttpServer::deleteEmail(std::string &path, const char *filePath)
+bool HttpServer::deleteEmail(ClientInfo &info, const char *filePath)
 {
 	std::fstream ffile(filePath, std::ios::out | std::ios::in);
 	std::string line;
 	std::ostringstream oss_buff;
 	bool found = false;
 	
-	int i = path.find("email=") + 6;
-	std::string todel = path.substr(i, path.size());
+	int i = info.info.query.find("?email=") + 7;
+	std::string todel = info.info.query.substr(i, info.info.query.size());
 	while (getline(ffile, line))
 	{
+		
 		int idx = line.find(',');
 		std::string email = line.substr(0, idx);
 		if (email == todel)

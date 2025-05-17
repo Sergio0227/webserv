@@ -21,6 +21,7 @@
 #include <iomanip>
 #include <sys/stat.h>
 #include <climits>
+#include <dirent.h>
 
 #define BLUE "\033[34m"
 #define GREEN "\033[32m"
@@ -120,6 +121,8 @@ bool isRegularFile(const std::string &path);
 bool hasReadAccess(const std::string &path);
 
 void setStatus(ClientInfo &info, int code);
+
+std::string buildUploadFilename(std::string &data, const char *path);
 
 std::string getStringMethod(Methods method);
 

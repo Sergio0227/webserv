@@ -3,7 +3,6 @@
         "array": "cpp",
         "atomic": "cpp",
         "bit": "cpp",
-        "*.tcc": "cpp",
         "cctype": "cpp",
         "charconv": "cpp",
         "chrono": "cpp",
@@ -11,6 +10,7 @@
         "cmath": "cpp",
         "compare": "cpp",
         "concepts": "cpp",
+        "csignal": "cpp",
         "cstdarg": "cpp",
         "cstddef": "cpp",
         "cstdint": "cpp",
@@ -58,7 +58,6 @@
         "text_encoding": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "variant": "cpp",
-        "csignal": "cpp"
+        "variant": "cpp"
     }
 }
