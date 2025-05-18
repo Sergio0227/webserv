@@ -25,6 +25,7 @@ void ClientInfo::reset()
 	status_code = 0;
 	status_msg.clear();
 	close_connection = false;
+	dir_listening = false;
 	run_cgi = false;
 	keep_alive = false;
 	file_uploaded = false;

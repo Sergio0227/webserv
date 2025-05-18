@@ -60,7 +60,7 @@ bool HttpServer::handleRequest(int client_fd)
 	{
 		if (_debug)
 			logMessage(DEBUG, _socket_fd,"Client request failed.", &info, 1);
-		handleErrorResponse(info);
+		sendErrorResponse(info);
 		close(client_fd);
 		if (_debug)
 			logMessage(DEBUG,  _socket_fd, "Connection closed", &_client_info[client_fd], 0);
@@ -72,7 +72,7 @@ bool HttpServer::handleRequest(int client_fd)
 }
 
 //reads request and parses request to map<int client_fd, struct ClientInfo>
-//todo error function for recv
+
 void HttpServer::readRequest(ClientInfo &info)
 {
 	char buffer[1024];
@@ -83,7 +83,10 @@ void HttpServer::readRequest(ClientInfo &info)
 	{
 		bytes_read = recv(info.fd, buffer, sizeof(buffer) - 1, 0);
 		if (bytes_read < 0)
-			throw std::runtime_error("Error: recv");
+		{
+			info.close_connection = true, info.status_code = 500;
+			return ;
+		}
 		if (bytes_read == 0)
 			break;
 		buffer[bytes_read] = '\0';
@@ -105,12 +108,16 @@ void HttpServer::readRequest(ClientInfo &info)
 			break;
 		}
 	}
-	info.info.body.body_str = info.info.request.substr(2, info.info.request.size());
+	if (info.info.request.size() > 1)
+		info.info.body.body_str = info.info.request.substr(2);
 	while (total_read < info.info.body.body_size)
 	{
 		bytes_read = recv(info.fd, buffer, sizeof(buffer) - 1, 0);
 		if (bytes_read < 0)
-			throw std::runtime_error("Error: recv");
+		{
+			info.close_connection = true, info.status_code = 500;
+			return ;
+		}
 		if (bytes_read == 0)
 			break;
 		buffer[bytes_read] = '\0';
@@ -125,34 +132,49 @@ void HttpServer::readRequest(ClientInfo &info)
 void HttpServer::parseRequestLine(ClientInfo& info)
 {
 	std::string &req = info.info.request;
+	std::string method, path, http_version;
 
-	int i = req.find(' ');
-	std::string method = req.substr(0, i);
+	if (!safeExtract(req, ' ', method))
+	{
+		setStatus(info, 400), info.close_connection = true;
+		return;
+	}
 	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
 		setStatus(info, 405), info.close_connection = true;
 		return;
 	}
-	req = req.substr(i+1, req.size());
-	i = req.find(' ');
-	std::string path = req.substr(0, i);
+	if (!safeExtract(req, ' ', path))
+	{
+		setStatus(info, 400);
+		info.close_connection = true;
+		return;
+	}
 	if (checkPath(info, path) == false)
 	{
+		_client_info[info.fd].info.path = path;
 		setStatus(info, 404), info.close_connection = true;
 		return ;
 	}
-	req = req.substr(i+1, req.size());
-	i = req.find('\r');
-	std::string http_version = req.substr(0, i);
+	if (!safeExtract(req, '\r', http_version))
+	{
+		_client_info[info.fd].info.path = path;
+		setStatus(info, 400);
+		info.close_connection = true;
+		return;
+	}
 	if (http_version != "HTTP/1.1")
 	{
 		setStatus(info, 505), info.close_connection = true;
 		return ;
 	}
+
 	_client_info[info.fd].info.method = getEnumMethod(method);
 	_client_info[info.fd].info.path = path;
 	_client_info[info.fd].info.http_version = http_version;
-	req = req.substr(i+2, req.size());
+
+	if (req.size() > 0 && req[0] == '\n')
+		req = req.substr(1);
 }
 
 void HttpServer::parseRequestBody(ClientInfo& info)
@@ -164,7 +186,7 @@ void HttpServer::parseRequestBody(ClientInfo& info)
 		int start = body_ref.find("email=") + 6;
 		int end = body_ref.find('&') - start;
 		info.info.body.email = body_ref.substr(start, end);
-		info.info.body.passw = body_ref.substr(body_ref.find("password=") + 9, body_ref.size());
+		info.info.body.passw = body_ref.substr(body_ref.find("password=") + 9);
 	}
 	else if (info.info.headers["Content-Type"].find("multipart/form-data") != std::string::npos)
 		info.file_uploaded = true;
@@ -172,9 +194,7 @@ void HttpServer::parseRequestBody(ClientInfo& info)
 		info.status_code = 415, info.close_connection = true;
 }
 
-//if an Http error occurs an appropriate Response is send and the connection is closed
-//also generic based on error pages or loc (talk)
-void HttpServer::handleErrorResponse(ClientInfo &info)
+void HttpServer::sendErrorResponse(ClientInfo &info)
 {
 	if (!info.close_connection)
 		return ;
@@ -188,7 +208,7 @@ void HttpServer::handleErrorResponse(ClientInfo &info)
 	sendHttpResponse(info, NULL, "text/html", body);
 }
 
-//parses the Client-Request-Header to a map<string, string>
+//parses the Client-Request-Header to a map<string, string> and returns content-length
 size_t HttpServer::parseRequestHeader(ClientInfo& info)
 {
 	std::string &req = info.info.request;
@@ -198,9 +218,9 @@ size_t HttpServer::parseRequestHeader(ClientInfo& info)
 		if (req[0] == '\r')
 			break;
 		std::string key = req.substr(0, req.find(':'));
-		req = req.substr(req.find(':') + 2, req.size());
+		req = req.substr(req.find(':') + 2);
 		std::string val = req.substr(0, req.find('\r'));
-		req = req.substr(req.find('\r') + 2, req.size());
+		req = req.substr(req.find('\r') + 2);
 		if (key.empty() == true || val.empty() == true)
 		{
 			info.status_code = 400, info.close_connection = true;
@@ -211,7 +231,7 @@ size_t HttpServer::parseRequestHeader(ClientInfo& info)
 	if (info.info.headers["Content-Type"].find("multipart/form-data") != std::string::npos)
 	{
 		size_t pos = info.info.headers["Content-Type"].find("boundary=") + 9;
-		info.info.boundary = info.info.headers["Content-Type"].substr(pos, info.info.headers["Content-Type"].size());
+		info.info.boundary = info.info.headers["Content-Type"].substr(pos);
 	}
 	if (info.info.headers.find("Content-Length") != info.info.headers.end())
 		return (std::atoi(info.info.headers["Content-Length"].c_str()));
@@ -220,18 +240,19 @@ size_t HttpServer::parseRequestHeader(ClientInfo& info)
 }
 
 //Depending on the method, the server sends a response back
-//GET: if path or dir exists, if dir -> add index.html, if file doesnt exist send 404, else send html back with 200 ok
-//POST: email already exists send 409 Conflict, else save credentials in csv and send 303 redirect to login
-//PUT: updates a password
-//DELETE: deletes an account if user is logged in
-
 void HttpServer::executeResponse(ClientInfo &info)
 {
 	Methods meth = info.info.method;
 
 	if (meth == GET)
 	{
-		if (info.run_cgi)
+		if (info.dir_listening)
+		{
+			setStatus(info, 200);
+			std::string body = constructBodyForDirList(info);
+			sendHttpResponse(info, NULL, "text/html", body);
+		}
+		else if (info.run_cgi)
 		{
 			//CGI cgi(info);
 		}
@@ -239,9 +260,13 @@ void HttpServer::executeResponse(ClientInfo &info)
 		{
 			setStatus(info, 200);
 			std::string body = parseFileToString(info.info.absolute_path.c_str());
+			if (body == "")
+			{
+				setStatus(info, 404), info.close_connection = true;
+				return ;
+			}
 			sendHttpResponse(info, NULL, "text/html", body);
-		}
-		
+		}	
 	}
 	else if (meth == POST)
 	{
@@ -306,7 +331,6 @@ void HttpServer::executeResponse(ClientInfo &info)
 		logMessage(DEBUG, _socket_fd, "", &info, 1);
 }
 
-//todo error function for send
 //constructs and sends HttpResponse
 void HttpServer::sendHttpResponse(ClientInfo &info, const char *location, const char *content_type, std::string &body)
 {
@@ -329,7 +353,7 @@ void HttpServer::sendHttpResponse(ClientInfo &info, const char *location, const 
 	//std::cout << "Response: " << response << std::endl; //uncomment this to see full raw response from server
 	int bytes_sent = send(info.fd, response.c_str(), response.size(), 0);
 	if (bytes_sent < 0)
-		std::runtime_error("send error");
+		throw std::runtime_error("send error");
 }
 
 //reads a file, parses it into a string and returns it
@@ -339,7 +363,7 @@ std::string HttpServer::parseFileToString(const char *filename)
 
 	int fd = open(filename, O_RDONLY);
 	if (fd < 0)
-		std::runtime_error("Open");
+		return "";
 	char buffer[1024];
 	int b_read;
 	while ((b_read = read(fd, buffer, sizeof(buffer))) > 0)
@@ -356,70 +380,71 @@ bool HttpServer::checkPath(ClientInfo &info, std::string &path)
 {
 	std::string full_path;
 	bool flag = false;
+	bool autoindex_enabled = false;
+	bool is_dir = false;
 
-	//handle built-in functionalities, register, upload, login -> webserver handles this
-	if ((path == "/register" || path == "/upload" || path == "/login") && _conf->getLocation(path) != NULL)
-		return 1;
-	//filter out unnecessary requests
-	if (path == "/.well-known/appspecific/com.chrome.devtools.json" || path.find("favicon") != std::string::npos)
-		return 0;
 	//handle path based on query
 	if (path.find("?") != std::string::npos)
 	{
-		info.info.query = path.substr(path.find("?"), path.size());
+		info.info.query = path.substr(path.find("?"));
 		path = path.substr(0, path.find("?"));
 	}
+	//handle redirect location
 	Location *loc = _conf->getLocation(path);
-	if (loc != NULL)
+	if (loc && !loc->getReturnValue().empty())
 	{
-		if (loc->getReturnValue() != "")
+		std::istringstream iss(loc->getReturnValue());
+		std::string test_path;
+		iss >> info.status_code >> test_path;
+		Location *test_loc = _conf->getLocation(test_path);
+		if (test_loc)
+			loc = test_loc;
+		else
+			flag = true;
+	}
+	//handle location
+	if (loc && !flag)
+	{
+		if (!loc->getRoot().empty())
+			full_path = loc->getRoot();
+		else
+			full_path = _conf->getRoot();
+		is_dir = isDirectory(full_path);
+		if (is_dir && !loc->getIndex().empty())
 		{
-			std::istringstream iss(loc->getReturnValue());
-			std::string test_path;
-			iss >> info.status_code >> test_path;
-			Location *test_loc = _conf->getLocation(test_path);
-			if (test_loc != NULL)
-				loc = test_loc;
-			else
-				flag = true;
+			if (full_path[full_path.size() - 1] != '/')
+				full_path += "/";
+			full_path += loc->getIndex();
 		}
-		if (!flag)
-		{
-			if (loc->getRoot() != "")
-				full_path = loc->getRoot();
-			else
-				full_path = _conf->getRoot();
-			if (isDirectory(full_path) && loc->getIndex() != "")
-			{
-				if (full_path[full_path.size() -1] == '/')
-					full_path += loc->getIndex();
-				else
-					full_path += "/" + loc->getIndex();
-			}
-			//if (loc->getCGIExt() != "")
-			// {
-			// 	//check if ext is valid
-			// }
-		}
+		autoindex_enabled = loc->getAutoindex();
+		//if (loc->getCGIExt() != "")
+		// {
+		// 	//check if ext is valid
+		// }
 	}
 	else
 	{
-		full_path = _conf->getRoot();
-		full_path += path;
-		if (isDirectory(full_path))
+		full_path = _conf->getRoot() + path;
+		is_dir = isDirectory(full_path);
+		if (is_dir)
 		{
-			if (full_path[full_path.size() -1] == '/')
-				full_path += _conf->getIndex();
-			else
-				full_path += "/" + _conf->getIndex();
+			if (full_path[full_path.size() - 1] != '/')
+				full_path += "/";
+			full_path += _conf->getIndex();
 		}
+		autoindex_enabled = _conf->getAutoindex();	
 	}
 	if (!access(full_path.c_str(), F_OK))
 	{
+		//check for dir listening
+		if ((loc && loc->getIndex().empty() && autoindex_enabled && is_dir)
+			|| (autoindex_enabled && is_dir && _conf->getIndex().empty()))
+			info.dir_listening = true;
 		info.info.absolute_path = full_path;
 		return 1;
 	}
-	else return 0;
+	else
+		return 0;
 }
 
 
@@ -450,7 +475,7 @@ bool HttpServer::deleteEmail(ClientInfo &info, const char *filePath)
 	bool found = false;
 	
 	int i = info.info.query.find("?email=") + 7;
-	std::string todel = info.info.query.substr(i, info.info.query.size());
+	std::string todel = info.info.query.substr(i);
 	while (getline(ffile, line))
 	{
 		
@@ -517,4 +542,34 @@ bool HttpServer::checkBodySize(ClientInfo &info)
 	if (info.info.body.body_size > size) 
 		return false;
 	return true;
+}
+
+std::string HttpServer::constructBodyForDirList(ClientInfo &info)
+{
+	std::string		name;
+	struct dirent	*entry;
+	std::string		body;
+	std::string		directory = info.info.path;
+	DIR				*dir;
+
+	if (info.info.path != "/")
+		directory += "/";
+
+	body += "<!DOCTYPE html>\n";
+    body += "<html>\n<head>\n<title>Dir Listening</title>\n</head>\n<body>\n";
+	body += "<h1>Directory Listing</h1>\n";
+    body += "<ul>\n";
+	dir = opendir(info.info.absolute_path.c_str());
+	if (!dir)
+        return body + "</ul></body></html>";
+    while ((entry = readdir(dir)) != NULL)
+	{
+		name = entry->d_name;
+		if (name == "." || name == "..")
+			continue;
+		body += "<li><a href=\"" + directory + name + "\">" + name + "</a></li>";
+	}
+	closedir(dir);
+	body += "</ul></body></html>";
+	return body;
 }

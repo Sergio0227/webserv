@@ -8,12 +8,9 @@ Brain::Brain(std::vector<std::string>& config_file)
 	_config_files.resize(0);
 	FD_ZERO(&_cur_sockets);
 
-
 	splitServers(config_file);
 	initServerConfigs();
-	//std::cout << "Index: " << _server_conf[0]->getIndex() << std::endl;
 	setupServers();
-    
 	handleConnections();
 }
 

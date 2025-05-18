@@ -277,20 +277,42 @@ std::string buildUploadFilename(std::string &data, const char *path)
 	std::string ext = filename.substr(start, end - start);
 	filename = filename.substr(0, start);
 
-	DIR* dir = opendir(path);
-	struct dirent* entry;
-	int count = 0;
-
-	if (!dir)
+	
+	
+	int count = countFilesInsideDir(path);
+	if (count == -1)
 		return "";
-	while ((entry = readdir(dir)) != NULL)
-	{
-		std::string name = entry->d_name;
-		if (name != "." && name != "..")
-			count++;
-	}
 	std::ostringstream oss;
 	oss << count;
 	filename += "_" + oss.str() + ext;
 	return (filename);
+}
+
+int countFilesInsideDir(const char *path)
+{
+	DIR* dir = opendir(path);
+	struct dirent* entry;
+	int i = 0;
+
+	if (!dir)
+		return -1;
+	while ((entry = readdir(dir)) != NULL)
+	{
+		std::string name = entry->d_name;
+		if (name != "." && name != "..")
+			i++;
+	}
+	return i;
+}
+
+bool safeExtract(std::string& input, char delim, std::string& out)
+{
+	size_t pos;
+	
+	pos = input.find(delim);
+	if (pos == std::string::npos)
+		return false;
+	out = input.substr(0, pos);
+	input = input.substr(pos + 1);
+	return true;
 }

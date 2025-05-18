@@ -42,6 +42,7 @@ struct ClientInfo
 {
 	int			fd;
 	bool		run_cgi;
+	bool dir_listening;
 	int			status_code;
 	std::string	status_msg;
 	bool		close_connection;

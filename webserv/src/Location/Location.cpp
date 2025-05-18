@@ -175,3 +175,8 @@ size_t Location::getClientMaxBodySize() const
 {
     return _client_max_body_size;
 }
+
+bool Location::getAutoindex() const
+{
+    return _autoindex;
+}

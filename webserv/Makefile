@@ -11,7 +11,7 @@ SERVER_OBJ = $(SERVER_SRC:.cpp=.o)
 
 SERVER_EXEC = server
 CFLAGS		= -Werror -Wall -Wextra
-CPPFLAGS	= -std=c++98 -I./lib
+CPPFLAGS	= -std=c++98 -I./lib -g
 CC			= c++
 RM			= rm -rf
 

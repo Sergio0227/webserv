@@ -124,6 +124,10 @@ void setStatus(ClientInfo &info, int code);
 
 std::string buildUploadFilename(std::string &data, const char *path);
 
+int countFilesInsideDir(const char *path);
+
+bool safeExtract(std::string &input, char delim, std::string &out);
+
 std::string getStringMethod(Methods method);
 
 std::string getCurrentTime();
