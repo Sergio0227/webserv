@@ -417,6 +417,8 @@ bool HttpServer::checkPath(ClientInfo &info, std::string &path)
 			full_path += loc->getIndex();
 		}
 		autoindex_enabled = loc->getAutoindex();
+		if (!loc->getIndex().empty())
+				autoindex_enabled = false;
 		//if (loc->getCGIExt() != "")
 		// {
 		// 	//check if ext is valid
@@ -432,14 +434,16 @@ bool HttpServer::checkPath(ClientInfo &info, std::string &path)
 				full_path += "/";
 			full_path += _conf->getIndex();
 		}
-		autoindex_enabled = _conf->getAutoindex();	
+		autoindex_enabled = _conf->getAutoindex();
+		if (!_conf->getIndex().empty())
+				autoindex_enabled = false;
 	}
 	if (!access(full_path.c_str(), F_OK))
 	{
 		//check for dir listening
 		if ((loc && loc->getIndex().empty() && autoindex_enabled && is_dir)
 			|| (autoindex_enabled && is_dir && _conf->getIndex().empty()))
-			info.dir_listening = true;
+				info.dir_listening = true;
 		info.info.absolute_path = full_path;
 		return 1;
 	}
@@ -551,7 +555,13 @@ std::string HttpServer::constructBodyForDirList(ClientInfo &info)
 	std::string		body;
 	std::string		directory = info.info.path;
 	DIR				*dir;
+	Location *loc = _conf->getLocation(info.info.path);
+	std::string path;
 
+	if (loc && !loc->getRoot().empty())
+		path = loc->getRoot() + "/";
+	else
+		path = info.info.absolute_path;
 	if (info.info.path != "/")
 		directory += "/";
 
@@ -559,7 +569,7 @@ std::string HttpServer::constructBodyForDirList(ClientInfo &info)
     body += "<html>\n<head>\n<title>Dir Listening</title>\n</head>\n<body>\n";
 	body += "<h1>Directory Listing</h1>\n";
     body += "<ul>\n";
-	dir = opendir(info.info.absolute_path.c_str());
+	dir = opendir(path.c_str());
 	if (!dir)
         return body + "</ul></body></html>";
     while ((entry = readdir(dir)) != NULL)
