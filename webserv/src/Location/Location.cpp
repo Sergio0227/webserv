@@ -180,3 +180,8 @@ bool Location::getAutoindex() const
 {
     return _autoindex;
 }
+
+bool Location::isMethodAllowed(std::string &meth)
+{
+    return (_allowed_methods[meth]);
+}

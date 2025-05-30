@@ -12,7 +12,7 @@ HttpServer::HttpServer(Config *conf, short port, std::string ip, int backlog, bo
 	_debug = debug;
 	_backlog = backlog;
 
-	_client_info[_socket_fd].fd = _socket_fd; //first entry in _client_info map is server socked with addr saved to clean up
+	_client_info[_socket_fd].fd = _socket_fd;
 	_client_info[_socket_fd].addr = _socket_addr;
 
 	if (bind(_socket_fd, (sockaddr *)&_socket_addr, sizeof(_socket_addr)) < 0)
@@ -59,15 +59,17 @@ bool HttpServer::handleRequest(int client_fd)
 	if (info.close_connection)
 	{
 		if (_debug)
-			logMessage(DEBUG, _socket_fd,"Client request failed.", &info, 1);
+			logMessage(DEBUG, _socket_fd,"Failed ", &info, 1);
 		sendErrorResponse(info);
 		close(client_fd);
 		if (_debug)
 			logMessage(DEBUG,  _socket_fd, "Connection closed", &_client_info[client_fd], 0);
+		_client_info[client_fd].reset();
 		_client_info.erase(client_fd);
 		return false;
 	}
 	_client_info[client_fd].reset();
+	_client_info.erase(client_fd);
 	return true;
 }
 
@@ -84,7 +86,8 @@ void HttpServer::readRequest(ClientInfo &info)
 		bytes_read = recv(info.fd, buffer, sizeof(buffer) - 1, 0);
 		if (bytes_read < 0)
 		{
-			info.close_connection = true, info.status_code = 500;
+			setStatus(info, 500);
+			info.close_connection = true;
 			return ;
 		}
 		if (bytes_read == 0)
@@ -115,7 +118,8 @@ void HttpServer::readRequest(ClientInfo &info)
 		bytes_read = recv(info.fd, buffer, sizeof(buffer) - 1, 0);
 		if (bytes_read < 0)
 		{
-			info.close_connection = true, info.status_code = 500;
+			setStatus(info, 500);
+			info.close_connection = true;
 			return ;
 		}
 		if (bytes_read == 0)
@@ -150,15 +154,20 @@ void HttpServer::parseRequestLine(ClientInfo& info)
 		info.close_connection = true;
 		return;
 	}
-	if (checkPath(info, path) == false)
+	int error = checkPath(info, path, method);
+	_client_info[info.fd].info.path = path;
+	if (error == ERROR_PATH_404)
 	{
-		_client_info[info.fd].info.path = path;
 		setStatus(info, 404), info.close_connection = true;
+		return ;
+	}
+	else if (error == ERROR_METHOD_405)
+	{
+		setStatus(info, 405), info.close_connection = true;
 		return ;
 	}
 	if (!safeExtract(req, '\r', http_version))
 	{
-		_client_info[info.fd].info.path = path;
 		setStatus(info, 400);
 		info.close_connection = true;
 		return;
@@ -170,7 +179,6 @@ void HttpServer::parseRequestLine(ClientInfo& info)
 	}
 
 	_client_info[info.fd].info.method = getEnumMethod(method);
-	_client_info[info.fd].info.path = path;
 	_client_info[info.fd].info.http_version = http_version;
 
 	if (req.size() > 0 && req[0] == '\n')
@@ -254,7 +262,13 @@ void HttpServer::executeResponse(ClientInfo &info)
 		}
 		else if (info.run_cgi)
 		{
-			//CGI cgi(info);
+			CGI cgi(info);
+			if (!info.close_connection)
+			{
+				std::string res = "Result: " + cgi.getCGIResponse();
+				setStatus(info, 200);
+				sendHttpResponse(info, NULL, "text/plain", res);
+			}
 		}
 		else
 		{
@@ -272,6 +286,7 @@ void HttpServer::executeResponse(ClientInfo &info)
 	{
 		if (info.run_cgi)
 		{
+			
 			//CGI cgi(info);
 		}
 		if (info.info.path == "/register")
@@ -376,7 +391,8 @@ std::string HttpServer::parseFileToString(const char *filename)
 }
 
 //more generic attempt
-bool HttpServer::checkPath(ClientInfo &info, std::string &path)
+//to do methods check
+int HttpServer::checkPath(ClientInfo &info, std::string &path, std::string &method)
 {
 	std::string full_path;
 	bool flag = false;
@@ -419,6 +435,8 @@ bool HttpServer::checkPath(ClientInfo &info, std::string &path)
 		autoindex_enabled = loc->getAutoindex();
 		if (!loc->getIndex().empty())
 				autoindex_enabled = false;
+		if (!loc->isMethodAllowed(method))
+			return (ERROR_METHOD_405);
 		//if (loc->getCGIExt() != "")
 		// {
 		// 	//check if ext is valid
@@ -440,15 +458,22 @@ bool HttpServer::checkPath(ClientInfo &info, std::string &path)
 	}
 	if (!access(full_path.c_str(), F_OK))
 	{
+		//check for cgi script
+		if (path.find("/cgi-bin") != std::string::npos)
+		{
+			info.info.absolute_path = full_path;
+			info.run_cgi = true;
+			return true;
+		}
 		//check for dir listening
 		if ((loc && loc->getIndex().empty() && autoindex_enabled && is_dir)
 			|| (autoindex_enabled && is_dir && _conf->getIndex().empty()))
 				info.dir_listening = true;
 		info.info.absolute_path = full_path;
-		return 1;
+		return true;
 	}
 	else
-		return 0;
+		return (ERROR_PATH_404);
 }
 
 

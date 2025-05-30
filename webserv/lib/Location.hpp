@@ -42,8 +42,7 @@ class Location
         std::string getIndex() const;
         bool getAutoindex() const;
         const std::map<short, std::string>& getErrorPages() const;
-
-
+        bool isMethodAllowed(std::string &meth);
         void initErrorPages();
         void setPath(std::string &path);
 };

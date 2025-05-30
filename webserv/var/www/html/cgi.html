@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>CGI Calculator</title>
+</head>
+<body>
+    <h1>Simple CGI Calculator</h1>
+    <form action="/cgi-bin" method="get">
+        <label>Number A: <input type="text" name="a" /></label><br />
+        <label>Operator: 
+            <select name="op">
+                <option value="+">+</option>
+                <option value="-">−</option>
+                <option value="*">×</option>
+                <option value="/">÷</option>
+            </select>
+        </label><br />
+        <label>Number B: <input type="text" name="b" /></label><br />
+        <input type="submit" value="Calculate" />
+    </form>
+</body>
+</html>

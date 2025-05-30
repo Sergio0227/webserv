@@ -27,7 +27,7 @@ class HttpServer : public Socket
 		std::string parseFileToString(const char *filename);
 
 		int uploadFile(ClientInfo &info, const char *path);
-		bool checkPath(ClientInfo &info, std::string &path);
+		int checkPath(ClientInfo &info, std::string &path, std::string &method);
 		bool deleteEmail(ClientInfo &info, const char *filePath);
 		bool checkBodySize(ClientInfo &info);
 

@@ -30,6 +30,8 @@
 #define RESET "\033[0m"
 #define BACKLOG 5
 #define MAX_CONTENT_LENGTH 1000000 //1mb maxbody if maxbody doesnt exist in config
+#define ERROR_PATH_404 404
+#define ERROR_METHOD_405 405
 
 /*
 ---Function Prototypes in Header----
