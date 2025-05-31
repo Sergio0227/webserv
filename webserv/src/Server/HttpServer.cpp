@@ -129,7 +129,7 @@ void HttpServer::readRequest(ClientInfo &info)
 		info.info.body.body_str.append(buffer, bytes_read);
 		total_read += bytes_read;
 	}
-	if (info.info.body.body_size != 0)
+	if (info.info.body.body_size != 0 && !info.run_cgi)
 		parseRequestBody(info);
 }
 
