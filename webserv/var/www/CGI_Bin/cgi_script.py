@@ -49,8 +49,9 @@ def handle_get(params):
 	print(res)
 
 def handle_post(post_data):
-	txt = post_data[5:] 
-	decoded_txt = urllib.parse.unquote(txt)
+	txt = post_data[5:]
+	decoded_txt = urllib.parse.unquote_plus(txt)
+	decoded_txt = decoded_txt.replace('\r', '').replace('\n', '')
 	print(len(decoded_txt))
 
 method = os.environ.get('REQUEST_METHOD', '')
