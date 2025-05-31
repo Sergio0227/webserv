@@ -253,23 +253,25 @@ void HttpServer::executeResponse(ClientInfo &info)
 {
 	Methods meth = info.info.method;
 
-	if (meth == GET)
+	if (info.run_cgi)
+	{
+		CGI cgi(info);
+		if (!info.close_connection)
+		{
+			std::string res = "Result: " + cgi.getCGIResponse();
+			setStatus(info, 200);
+			sendHttpResponse(info, NULL, "text/plain", res);
+		}
+		else
+			return;
+	}
+	else if (meth == GET)
 	{
 		if (info.dir_listening)
 		{
 			setStatus(info, 200);
 			std::string body = constructBodyForDirList(info);
 			sendHttpResponse(info, NULL, "text/html", body);
-		}
-		else if (info.run_cgi)
-		{
-			CGI cgi(info);
-			if (!info.close_connection)
-			{
-				std::string res = "Result: " + cgi.getCGIResponse();
-				setStatus(info, 200);
-				sendHttpResponse(info, NULL, "text/plain", res);
-			}
 		}
 		else
 		{
@@ -280,16 +282,12 @@ void HttpServer::executeResponse(ClientInfo &info)
 				setStatus(info, 404), info.close_connection = true;
 				return ;
 			}
-			sendHttpResponse(info, NULL, "text/html", body);
+			std::string c_t = retrieveContentType(info);
+			sendHttpResponse(info, NULL, c_t.c_str(), body);
 		}	
 	}
 	else if (meth == POST)
 	{
-		if (info.run_cgi)
-		{
-			
-			//CGI cgi(info);
-		}
 		if (info.info.path == "/register")
 		{
 			if (emailExists(info))

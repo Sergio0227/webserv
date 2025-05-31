@@ -316,3 +316,9 @@ bool safeExtract(std::string& input, char delim, std::string& out)
 	input = input.substr(pos + 1);
 	return true;
 }
+
+std::string retrieveContentType(ClientInfo &info)
+{
+	std::string &full_str = info.info.headers["Accept"];
+	return (full_str.substr(0, full_str.find(",")));
+}

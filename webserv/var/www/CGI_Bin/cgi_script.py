@@ -13,8 +13,7 @@ def parse_get():
 def parse_post():
 	content_length = int(os.environ.get('CONTENT_LENGTH', 0))
 	post_data = sys.stdin.read(content_length)
-	params = dict(pair.split('=') for pair in post_data.split('&') if '=' in pair)
-	return params
+	return post_data
 
 def handle_get(params):
 	error = False
@@ -49,9 +48,15 @@ def handle_get(params):
 		res = a_num * b_num
 	print(res)
 
+def handle_post(post_data):
+	txt = post_data[5:] 
+	decoded_txt = urllib.parse.unquote(txt)
+	print(len(decoded_txt))
+
 method = os.environ.get('REQUEST_METHOD', '')
 if method == 'GET':
     params = parse_get()
     handle_get(params)
 elif method == 'POST':
-    params = parse_post()
+	post_data = parse_post()
+	handle_post(post_data)
