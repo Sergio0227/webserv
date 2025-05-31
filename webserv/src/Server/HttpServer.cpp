@@ -52,6 +52,7 @@ bool HttpServer::handleRequest(int client_fd)
 	ClientInfo &info = _client_info[client_fd];
 	info.close_connection = false;
 	info.run_cgi = false;
+	info.fd = client_fd;
 
 	readRequest(info);
 	if (!info.close_connection)
@@ -390,8 +391,6 @@ std::string HttpServer::parseFileToString(const char *filename)
 	return str;
 }
 
-//more generic attempt
-//to do methods check
 int HttpServer::checkPath(ClientInfo &info, std::string &path, std::string &method)
 {
 	std::string full_path;
@@ -437,10 +436,6 @@ int HttpServer::checkPath(ClientInfo &info, std::string &path, std::string &meth
 				autoindex_enabled = false;
 		if (!loc->isMethodAllowed(method))
 			return (ERROR_METHOD_405);
-		//if (loc->getCGIExt() != "")
-		// {
-		// 	//check if ext is valid
-		// }
 	}
 	else
 	{
@@ -459,7 +454,7 @@ int HttpServer::checkPath(ClientInfo &info, std::string &path, std::string &meth
 	if (!access(full_path.c_str(), F_OK))
 	{
 		//check for cgi script
-		if (path.find("/cgi-bin") != std::string::npos)
+		if (loc && path.find("/cgi-bin") != std::string::npos)
 		{
 			info.info.absolute_path = full_path;
 			info.run_cgi = true;

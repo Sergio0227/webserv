@@ -41,6 +41,9 @@ def handle_get(params):
 	elif (decoded_op == "+"):
 		res = a_num + b_num
 	elif (decoded_op == "/"):
+		if (b_num == 0):
+			print("Division by zero is undefined")
+			return
 		res = a_num / b_num
 	elif (decoded_op == "*"):
 		res = a_num * b_num

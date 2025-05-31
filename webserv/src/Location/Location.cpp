@@ -142,9 +142,10 @@ void Location::setAllowedMethods(std::string& allowed_methods)
         if (allowed_methods[i] == ' ' || !allowed_methods[i])
         {
             std::string method = trim(allowed_methods.substr(j, i - j));
+            //std::cout << method << std::endl;
             if (method == "GET" || method == "POST" || method == "DELETE")
             {
-                this->_allowed_methods[allowed_methods.substr(j, i)] = true;
+                this->_allowed_methods[method] = true;
                 j = i;
             }
             else

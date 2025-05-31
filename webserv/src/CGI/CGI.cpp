@@ -62,12 +62,19 @@ void CGI::setEnv()
 
 void CGI::executeCGI()
 {
-	_pid = fork();
-	int in_pipe[2];
-	int out_pipe[2];
-	int status;
+	int		in_pipe[2];
+	int		out_pipe[2];
+	int		status;
+	ssize_t	bytes;
+	char	buffer[4096];
 
-	if (pipe(in_pipe) == -1 || pipe(out_pipe) == -1 || (_pid = fork()) < 0)
+	if (pipe(in_pipe) == -1 || pipe(out_pipe) == -1)
+	{
+		setStatus(_info, 500), _info.close_connection = true;
+		return ;
+	}
+	_pid = fork();
+	if (_pid < 0)
 	{
 		setStatus(_info, 500), _info.close_connection = true;
 		return ;
@@ -76,8 +83,6 @@ void CGI::executeCGI()
 	{
 		dup2(in_pipe[0], STDIN_FILENO);
 		dup2(out_pipe[1], STDOUT_FILENO);
-
-
 		close(in_pipe[1]);
 		close(out_pipe[0]);
 		execve(_argv[0], _argv, _envp);
@@ -91,10 +96,6 @@ void CGI::executeCGI()
 		if (_info.info.method == POST)
 			write(in_pipe[1], _info.info.body.body_str.c_str(), _info.info.body.body_str.size());
 		close(in_pipe[1]);
-
-		char buffer[4096];
-		
-		ssize_t bytes;
 		while ((bytes = read(out_pipe[0], buffer, sizeof(buffer))) > 0)
 			_response.append(buffer, bytes);
 		close(out_pipe[0]);
