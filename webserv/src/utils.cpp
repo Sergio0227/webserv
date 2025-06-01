@@ -316,3 +316,14 @@ std::string retrieveContentType(ClientInfo &info)
 	std::string &full_str = info.info.headers["Accept"];
 	return (full_str.substr(0, full_str.find(",")));
 }
+
+void	setNonBlockingFD(int fd)
+{
+	//save all flags
+	int flags = fcntl(fd, F_GETFL, 0);
+	if (flags == -1)
+		throw std::runtime_error("fcntl F_GETFL failed");
+	//set the fd with NonBlock Flag and saved flags
+	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
+		throw std::runtime_error("fcntl F_SETFL failed");
+}

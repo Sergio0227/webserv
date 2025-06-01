@@ -217,13 +217,13 @@ void HttpServer::sendErrorResponse(ClientInfo &info, HttpResponse &res)
 	body_path += ".html";
 	std::string body = parseFileToString(body_path.c_str());
 	if (body == "")
-		res.setStatus(404);
+		;
 	else
 	{
 		res.setBody(body);
 		res.setContentType("text/html");
 	}
-	res.sendResponse();
+	res.sendResponse("close");
 }
 
 //parses the Client-Request-Header to a map<string, string> and returns content-length
@@ -343,7 +343,7 @@ void HttpServer::executeResponse(ClientInfo &info, HttpResponse &res)
 		}
 		
 	}
-	res.sendResponse();
+	res.sendResponse("keep-alive");
 	if (_debug)
 		logMessage(DEBUG, _socket_fd, "", &info, 1);
 }
@@ -353,7 +353,7 @@ std::string HttpServer::parseFileToString(const char *filename)
 {
 	std::string str;
 
-	int fd = open(filename, O_RDONLY);
+	int fd = open(filename, O_RDONLY | O_NONBLOCK);
 	if (fd < 0)
 		return "";
 	char buffer[1024];
@@ -588,7 +588,7 @@ void HttpServer::runCGI(ClientInfo &info, HttpResponse &res)
 		res.setStatus(200);
 		res.setContentType("text/plain");
 		res.setBody("Result: " + cgi.getCGIResponse());
-		res.sendResponse();
+		res.sendResponse("keep-alive");
 	}
 	else
 		res.setStatus(200);

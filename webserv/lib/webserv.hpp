@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 #include <climits>
 #include <dirent.h>
+#include <fcntl.h>
 
 #define BLUE "\033[34m"
 #define GREEN "\033[32m"
@@ -129,6 +130,8 @@ int countFilesInsideDir(const char *path);
 bool safeExtract(std::string &input, char delim, std::string &out);
 
 std::string retrieveContentType(ClientInfo &info);
+
+void setNonBlockingFD(int fd);
 
 std::string getStringMethod(Methods method);
 

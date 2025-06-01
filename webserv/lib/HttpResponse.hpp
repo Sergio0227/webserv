@@ -12,7 +12,7 @@ class HttpResponse
 		std::string _content_type;
 		std::string _location;
 
-		void buildResponse();
+		void buildResponse(const std::string &c_status);
 		
 
     public:
@@ -21,6 +21,5 @@ class HttpResponse
 		void setContentType(const std::string &ct);
 		void setBody(const std::string &body);
 		void setLocation(const std::string &loc);
-		
-		void sendResponse();
+		void sendResponse(const std::string &c_status);
 };

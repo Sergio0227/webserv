@@ -4,9 +4,11 @@
 Brain::Brain(std::vector<std::string>& config_file)
 {
 	_nb_servers = 0;
+    _max_fd = 0;
 	_server_conf.resize(0);
 	_config_files.resize(0);
-	FD_ZERO(&_cur_sockets);
+	FD_ZERO(&_recv_fd_set);
+    FD_ZERO(&_send_fd_set);
 
 	splitServers(config_file);
 	initServerConfigs();
@@ -17,42 +19,96 @@ Brain::Brain(std::vector<std::string>& config_file)
 void Brain::handleConnections()
 {
 	int j;
+	fd_set  recv_fd_set_cpy;
+	fd_set  send_fd_set_cpy;
+	struct timeval time;
 
 	while (g_flag)
 	{
-		_rdy_sockets = _cur_sockets;
-		if (select(FD_SETSIZE, &_rdy_sockets, NULL, NULL, NULL) < 0)
+		time.tv_sec = 1;
+		time.tv_usec = 0;
+		recv_fd_set_cpy = _recv_fd_set;
+		send_fd_set_cpy = _send_fd_set;
+
+		if (select(_max_fd + 1, &recv_fd_set_cpy, &send_fd_set_cpy, NULL, &time) < 0)
 		{
 			if (errno == EINTR)
 				continue;
 			else
 				throw std::runtime_error("Error: select");
 		}	
-		for (int i = 0; i < FD_SETSIZE; ++i)
+		for (int i = 0; i <= _max_fd; ++i)
 		{
-			if (FD_ISSET(i, &_rdy_sockets))
+
+			if (FD_ISSET(i, &recv_fd_set_cpy) && ((j = isServerFd(i)) != INT_MAX))
 			{
-				if ((j = isServerFd(i)) != INT_MAX)
+				int client_fd = _servers[j]->acceptConnections();
+				if (client_fd < 0)
+					continue;
+				setNonBlockingFD(client_fd);
+				addFdToSet(client_fd, _recv_fd_set);
+				_client_to_serv_map[client_fd] = _servers[j];
+			}
+			else if (FD_ISSET(i, &recv_fd_set_cpy))
+			{
+				HttpServer* server = _client_to_serv_map[i];
+				if (!server->handleRequest(i))
 				{
-					int client_fd = _servers[j]->acceptConnections();
-					if (client_fd < 0)
-						continue;
-					FD_SET(client_fd, &_cur_sockets);
-					_client_to_serv_map[client_fd] = _servers[j];
+					if (FD_ISSET(i, &_send_fd_set))
+						removeFdFromSet(i, _send_fd_set);
+					if (FD_ISSET(i, &_recv_fd_set))
+						removeFdFromSet(i, _recv_fd_set);
+					_client_to_serv_map.erase(i);
 				}
-				else
-				{
-					HttpServer* server = _client_to_serv_map[i];
-					if (!server->handleRequest(i))
-					{
-						FD_CLR(i, &_cur_sockets);
-						_client_to_serv_map.erase(i);
-					}
-				}
+			}
+			else if (FD_ISSET(i, &send_fd_set_cpy))
+			{
+				std::cout << "ok" << std::endl;
+				//send data
 			}
 		}
 	}
 }
+
+// void Brain::handleConnections()
+// {
+// 	int j;
+
+// 	while (g_flag)
+// 	{
+// 		_rdy_sockets = _cur_sockets;
+// 		if (select(FD_SETSIZE, &_rdy_sockets, NULL, NULL, NULL) < 0)
+// 		{
+// 			if (errno == EINTR)
+// 				continue;
+// 			else
+// 				throw std::runtime_error("Error: select");
+// 		}	
+// 		for (int i = 0; i < FD_SETSIZE; ++i)
+// 		{
+// 			if (FD_ISSET(i, &_rdy_sockets))
+// 			{
+// 				if ((j = isServerFd(i)) != INT_MAX)
+// 				{
+// 					int client_fd = _servers[j]->acceptConnections();
+// 					if (client_fd < 0)
+// 						continue;
+// 					FD_SET(client_fd, &_cur_sockets);
+// 					_client_to_serv_map[client_fd] = _servers[j];
+// 				}
+// 				else
+// 				{
+// 					HttpServer* server = _client_to_serv_map[i];
+// 					if (!server->handleRequest(i))
+// 					{
+// 						FD_CLR(i, &_cur_sockets);
+// 						_client_to_serv_map.erase(i);
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+// } 
 
 int Brain::isServerFd(int fd)
 {
@@ -72,7 +128,8 @@ void Brain::setupServers()
 		_servers.push_back(server);
 		int server_fd = _servers[i]->getSocket();
 		_server_sockets.push_back(server_fd);
-		FD_SET(server_fd, &_cur_sockets);
+        setNonBlockingFD(server_fd);
+        addFdToSet(server_fd, _recv_fd_set);
 	}
 }
 
@@ -84,7 +141,7 @@ Brain::~Brain()
 
 	for (int i = 0; i < FD_SETSIZE; ++i)
 	{
-		if (FD_ISSET(i, &_cur_sockets))
+		if (FD_ISSET(i, &_recv_fd_set) || FD_ISSET(i, &_send_fd_set))
 		{
 			if ((k = isServerFd(i)) != INT_MAX)
 				logMessage(INFO, i, "Server connection closed.", NULL, 0);
@@ -94,7 +151,8 @@ Brain::~Brain()
 				logMessage(INFO, server->getSocket(), "Client connection closed.", &server->getClientInfoElem(i), 0);
 			}
 			close(i);
-			FD_CLR(i, &_cur_sockets);
+			removeFdFromSet(i, _recv_fd_set);
+			removeFdFromSet(i, _send_fd_set);
 		}
 	}
 	logMessage(SUCCESS, -1 , "Server(s) have been successfully shut down. All connections closed.", NULL, 0);
@@ -219,4 +277,17 @@ void Brain::parseLocation(size_t *i, int server_index, std::string location_name
 int Brain::getNbServers()
 {
     return this->_nb_servers;
+}
+
+void	Brain::addFdToSet(int fd, fd_set &fd_set)
+{
+	FD_SET(fd, &fd_set);
+	if (fd > _max_fd)
+		_max_fd = fd;
+}
+
+void	Brain::removeFdFromSet(int fd, fd_set &fd_set)
+{
+	FD_CLR(fd, &fd_set);
+	_max_fd--;
 }

@@ -2,10 +2,10 @@
 
 HttpResponse::HttpResponse(ClientInfo &info) : _info(info)
 {
-    _response = "";
-    _body = "";
-    _content_type = "";
-    _location = "";
+	_response = "";
+	_body = "";
+	_content_type = "";
+	_location = "";
 }
 
 
@@ -15,7 +15,7 @@ void HttpResponse::setStatus(int code)
 	_info.status_msg = getStatusMessage(code);
 }
 
-void HttpResponse::buildResponse()
+void HttpResponse::buildResponse(const std::string &c_status)
 {
 	std::ostringstream oss;
 	oss << _info.status_code;
@@ -28,7 +28,7 @@ void HttpResponse::buildResponse()
 	if (!_content_type.empty())
 		_response += "Content-Type: " + _content_type + "\r\n";
 	_response += "Content-Length: " + body_len + "\r\n";
-	_response += "Connection: keep-alive\r\n";
+	_response += "Connection: " + c_status + "\r\n";
 	if (!_location.empty())
 		_response += "Location: " + _location + "\r\n";
 	_response += "\r\n";
@@ -37,23 +37,23 @@ void HttpResponse::buildResponse()
 
 void HttpResponse::setContentType(const std::string &ct)
 {
-    _content_type = ct;
+	_content_type = ct;
 }
 
 void HttpResponse::setBody(const std::string &body)
 {
-    _body = body;
+	_body = body;
 }
 
 void HttpResponse::setLocation(const std::string &loc)
 {
-    _location = loc;
+	_location = loc;
 }
 
-void HttpResponse::sendResponse()
+void HttpResponse::sendResponse(const std::string &c_status)
 {
-    buildResponse();
-    int bytes_sent = send(_info.fd, _response.c_str(), _response.size(), 0);
+	buildResponse(c_status);
+	int bytes_sent = send(_info.fd, _response.c_str(), _response.size(), 0);
 	if (bytes_sent < 0)
 		throw std::runtime_error("send error");
 }
