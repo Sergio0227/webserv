@@ -70,13 +70,13 @@ void CGI::executeCGI()
 
 	if (pipe(in_pipe) == -1 || pipe(out_pipe) == -1)
 	{
-		setStatus(_info, 500), _info.close_connection = true;
+		_info.close_connection = true;
 		return ;
 	}
 	_pid = fork();
 	if (_pid < 0)
 	{
-		setStatus(_info, 500), _info.close_connection = true;
+		_info.close_connection = true;
 		return ;
 	}
 	if (_pid == 0)

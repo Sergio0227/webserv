@@ -7,7 +7,8 @@ SERVER_SRC = 	src/Server/HttpServer.cpp \
 				src/Brain/Brain.cpp \
 				src/ServerConfig/Config.cpp \
 				src/ClientInfo/ClientInfo.cpp \
-				src/CGI/CGI.cpp
+				src/CGI/CGI.cpp \
+				src/HttpResponse/HttpResponse.cpp
 SERVER_OBJ = $(SERVER_SRC:.cpp=.o)
 
 SERVER_EXEC = server

@@ -122,8 +122,6 @@ bool isRegularFile(const std::string &path);
 
 bool hasReadAccess(const std::string &path);
 
-void setStatus(ClientInfo &info, int code);
-
 std::string buildUploadFilename(std::string &data, const char *path);
 
 int countFilesInsideDir(const char *path);

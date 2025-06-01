@@ -260,12 +260,6 @@ bool hasReadAccess(const std::string& path)
 	return access(path.c_str(), R_OK | X_OK) == 0;
 }
 
-void setStatus(ClientInfo &info, int code)
-{
-	info.status_code = code;
-	info.status_msg = getStatusMessage(code);
-}
-
 std::string buildUploadFilename(std::string &data, const char *path)
 {
 	size_t start = data.find("filename=\"") + 10;

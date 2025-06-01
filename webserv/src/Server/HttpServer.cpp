@@ -5,8 +5,6 @@ HttpServer::HttpServer()
 
 HttpServer::HttpServer(Config *conf, short port, std::string ip, int backlog, bool debug) : Socket(port, ip) 
 {
-
-	//init serverStruct
 	_conf = conf;
 
 	_debug = debug;
@@ -50,18 +48,22 @@ int HttpServer::acceptConnections()
 bool HttpServer::handleRequest(int client_fd)
 {
 	ClientInfo &info = _client_info[client_fd];
+	HttpResponse res(info);
+
 	info.close_connection = false;
 	info.run_cgi = false;
 	info.fd = client_fd;
 
-	readRequest(info);
-	if (!info.close_connection)
-		executeResponse(info);
+	readRequest(info, res);
+	if (!info.close_connection && !info.run_cgi)
+		executeResponse(info, res);
+	else if (!info.close_connection && info.run_cgi)
+		runCGI(info, res);
 	if (info.close_connection)
 	{
 		if (_debug)
 			logMessage(DEBUG, _socket_fd,"Failed ", &info, 1);
-		sendErrorResponse(info);
+		sendErrorResponse(info, res);
 		close(client_fd);
 		if (_debug)
 			logMessage(DEBUG,  _socket_fd, "Connection closed", &_client_info[client_fd], 0);
@@ -76,7 +78,7 @@ bool HttpServer::handleRequest(int client_fd)
 
 //reads request and parses request to map<int client_fd, struct ClientInfo>
 
-void HttpServer::readRequest(ClientInfo &info)
+void HttpServer::readRequest(ClientInfo &info, HttpResponse &res)
 {
 	char buffer[1024];
 	int bytes_read = 0;
@@ -87,7 +89,7 @@ void HttpServer::readRequest(ClientInfo &info)
 		bytes_read = recv(info.fd, buffer, sizeof(buffer) - 1, 0);
 		if (bytes_read < 0)
 		{
-			setStatus(info, 500);
+			res.setStatus(500);
 			info.close_connection = true;
 			return ;
 		}
@@ -97,13 +99,13 @@ void HttpServer::readRequest(ClientInfo &info)
 		info.info.request.append(buffer, bytes_read);
 		if (info.info.request.find("\r\n\r\n") != std::string::npos)
 		{
-			parseRequestLine(info);
+			parseRequestLine(info, res);
 			if (info.close_connection)
 				return ;
 			info.info.body.body_size = parseRequestHeader(info);
 			if (!checkBodySize(info))
 			{
-				setStatus(info, 413), info.close_connection = true;
+				res.setStatus(413), info.close_connection = true;
 				return ;
 			}
 			if (info.close_connection)
@@ -119,7 +121,7 @@ void HttpServer::readRequest(ClientInfo &info)
 		bytes_read = recv(info.fd, buffer, sizeof(buffer) - 1, 0);
 		if (bytes_read < 0)
 		{
-			setStatus(info, 500);
+			res.setStatus(500);
 			info.close_connection = true;
 			return ;
 		}
@@ -134,24 +136,24 @@ void HttpServer::readRequest(ClientInfo &info)
 }
 
 //parses method, path, version, and checks for errors
-void HttpServer::parseRequestLine(ClientInfo& info)
+void HttpServer::parseRequestLine(ClientInfo& info, HttpResponse &res)
 {
 	std::string &req = info.info.request;
 	std::string method, path, http_version;
 
 	if (!safeExtract(req, ' ', method))
 	{
-		setStatus(info, 400), info.close_connection = true;
+		res.setStatus(400), info.close_connection = true;
 		return;
 	}
 	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
-		setStatus(info, 405), info.close_connection = true;
+		res.setStatus(405), info.close_connection = true;
 		return;
 	}
 	if (!safeExtract(req, ' ', path))
 	{
-		setStatus(info, 400);
+		res.setStatus(400);
 		info.close_connection = true;
 		return;
 	}
@@ -159,23 +161,23 @@ void HttpServer::parseRequestLine(ClientInfo& info)
 	_client_info[info.fd].info.path = path;
 	if (error == ERROR_PATH_404)
 	{
-		setStatus(info, 404), info.close_connection = true;
+		res.setStatus(404), info.close_connection = true;
 		return ;
 	}
 	else if (error == ERROR_METHOD_405)
 	{
-		setStatus(info, 405), info.close_connection = true;
+		res.setStatus(405), info.close_connection = true;
 		return ;
 	}
 	if (!safeExtract(req, '\r', http_version))
 	{
-		setStatus(info, 400);
+		res.setStatus(400);
 		info.close_connection = true;
 		return;
 	}
 	if (http_version != "HTTP/1.1")
 	{
-		setStatus(info, 505), info.close_connection = true;
+		res.setStatus(505), info.close_connection = true;
 		return ;
 	}
 
@@ -203,18 +205,25 @@ void HttpServer::parseRequestBody(ClientInfo& info)
 		info.status_code = 415, info.close_connection = true;
 }
 
-void HttpServer::sendErrorResponse(ClientInfo &info)
+void HttpServer::sendErrorResponse(ClientInfo &info, HttpResponse &res)
 {
 	if (!info.close_connection)
 		return ;
 	int code = info.status_code;
 	std::ostringstream oss;
-	oss << code; 
-	std::string body_path("var/www/html/error_pages/");
+	oss << code;
+	std::string body_path = _conf->getRoot() + "/error_pages/";
 	body_path += oss.str();
 	body_path += ".html";
 	std::string body = parseFileToString(body_path.c_str());
-	sendHttpResponse(info, NULL, "text/html", body);
+	if (body == "")
+		res.setStatus(404);
+	else
+	{
+		res.setBody(body);
+		res.setContentType("text/html");
+	}
+	res.sendResponse();
 }
 
 //parses the Client-Request-Header to a map<string, string> and returns content-length
@@ -249,125 +258,94 @@ size_t HttpServer::parseRequestHeader(ClientInfo& info)
 }
 
 //Depending on the method, the server sends a response back
-void HttpServer::executeResponse(ClientInfo &info)
+void HttpServer::executeResponse(ClientInfo &info, HttpResponse &res)
 {
-	Methods meth = info.info.method;
-
-	if (info.run_cgi)
+	switch (info.info.method)
 	{
-		CGI cgi(info);
-		if (!info.close_connection)
+		case GET:
 		{
-			std::string res = "Result: " + cgi.getCGIResponse();
-			setStatus(info, 200);
-			sendHttpResponse(info, NULL, "text/plain", res);
-		}
-		else
-			return;
-	}
-	else if (meth == GET)
-	{
-		if (info.dir_listening)
-		{
-			setStatus(info, 200);
-			std::string body = constructBodyForDirList(info);
-			sendHttpResponse(info, NULL, "text/html", body);
-		}
-		else
-		{
-			setStatus(info, 200);
-			std::string body = parseFileToString(info.info.absolute_path.c_str());
-			if (body == "")
+			res.setStatus(200);
+			if (info.dir_listening)
 			{
-				setStatus(info, 404), info.close_connection = true;
+				res.setContentType("text/html");
+				res.setBody(constructBodyForDirList(info));
+			}
+			else
+			{
+				std::string body = parseFileToString(info.info.absolute_path.c_str());
+				if (body == "")
+				{
+					res.setStatus(404), info.close_connection = true;
+					return ;
+				}
+				res.setContentType(retrieveContentType(info));
+				res.setBody(body);
+			}
+			break;	
+		}
+		case POST:
+		{
+			res.setStatus(303);
+			if (info.info.path == "/register")
+			{
+				if (emailExists(info))
+				{
+					res.setStatus(409), info.close_connection = true;
+					return ;
+				}
+				res.setLocation("/login.html");
+				storeCredential(info.info.body, "var/www/data/users.csv");
+			}
+			else if (info.info.path == "/login")
+			{
+				if (!emailExists(info) || !passwordCorrect(info.info.body))
+				{
+					res.setStatus(401), info.close_connection = true;
+					return ;
+				}
+				res.setLocation("/user.html");
+			}
+			else if (info.info.path == "/upload" && info.file_uploaded == true)
+			{
+				if (uploadFile(info, "var/www/data/images/"))
+				{
+					res.setStatus(500), info.close_connection = true;
+					return ;
+				}
+				res.setStatus(201);
+			}
+			break;
+		}
+		case DELETE:
+		{
+			if (info.info.path.find("/delete_email") == std::string::npos)
+			{
+				res.setStatus(404), info.close_connection = true;
 				return ;
 			}
-			std::string c_t = retrieveContentType(info);
-			sendHttpResponse(info, NULL, c_t.c_str(), body);
-		}	
-	}
-	else if (meth == POST)
-	{
-		if (info.info.path == "/register")
-		{
-			if (emailExists(info))
+			if (deleteEmail(info, "var/www/data/users.csv") == false)
 			{
-				setStatus(info, 409), info.close_connection = true;
-				return ;
+				res.setStatus(400);
+				res.setBody("Invalid email");
+				res.setContentType("text/plain");
+				return;
 			}
-			setStatus(info, 303);
-			std::string empty_string = "";
-			storeCredential(info.info.body, "var/www/data/users.csv");
-			sendHttpResponse(info, "/login.html", NULL, empty_string);
+			res.setStatus(200);
+			res.setBody("Account successfully deleted");
+			res.setContentType("text/plain");
+			break;
 		}
-		else if (info.info.path == "/login")
+		default:
 		{
-			if (!emailExists(info) || !passwordCorrect(info.info.body))
-			{
-				setStatus(info, 401), info.close_connection = true;
-				return ;
-			}
-			setStatus(info, 303);
-			std::string empty_string = "";
-			sendHttpResponse(info, "/user.html", NULL, empty_string);
+			res.setStatus(405);
+			info.close_connection = true;
+			break;
 		}
-		else if (info.info.path == "/upload" && info.file_uploaded == true)
-		{
-			if (uploadFile(info, "var/www/data/images/"))
-			{
-				setStatus(info, 500), info.close_connection = true;
-				return ;
-			}
-			setStatus(info, 201);
-			std::string empty_string = "";
-			sendHttpResponse(info, NULL, NULL, empty_string);
-		}
+		
 	}
-	else if (meth == DELETE)
-	{
-		if (info.info.path.find("/delete_email") == std::string::npos)
-		{
-			setStatus(info, 404), info.close_connection = true;
-			return ;
-		}
-		if (deleteEmail(info, "var/www/data/users.csv") == false)
-		{
-			setStatus(info, 400);
-			std::string error_msg = "Invalid email";
-			sendHttpResponse(info, NULL, "text/plain", error_msg);
-			return;
-		}
-		setStatus(info, 200);
-		std::string msg = "Account successfully deleted";
-		sendHttpResponse(info, NULL, "text/plain", msg);
-	}
+	res.sendResponse();
 	if (_debug)
 		logMessage(DEBUG, _socket_fd, "", &info, 1);
-}
-
-//constructs and sends HttpResponse
-void HttpServer::sendHttpResponse(ClientInfo &info, const char *location, const char *content_type, std::string &body)
-{
-	std::ostringstream oss;
-	oss << info.status_code;
-	std::string status_code_str = oss.str();
-	oss.str("");
-	oss.clear();
-	oss << body.size();
-	std::string body_len = oss.str();
-	std::string response = "HTTP/1.1 " + status_code_str + " " + getStatusMessage(info.status_code) + "\r\n";
-	if (content_type != NULL)
-		response += "Content-Type: " + std::string(content_type) + "\r\n";
-	response += "Content-Length: " + body_len + "\r\n";
-	response += "Connection: keep-alive\r\n";
-	if (location != NULL)
-		response += "Location: " + std::string(location) + "\r\n";
-	response += "\r\n";
-	response += body;
-	//std::cout << "Response: " << response << std::endl; //uncomment this to see full raw response from server
-	int bytes_sent = send(info.fd, response.c_str(), response.size(), 0);
-	if (bytes_sent < 0)
-		throw std::runtime_error("send error");
 }
 
 //reads a file, parses it into a string and returns it
@@ -600,4 +578,18 @@ std::string HttpServer::constructBodyForDirList(ClientInfo &info)
 	closedir(dir);
 	body += "</ul></body></html>";
 	return body;
+}
+
+void HttpServer::runCGI(ClientInfo &info, HttpResponse &res)
+{
+	CGI cgi(info);
+	if (!info.close_connection)
+	{
+		res.setStatus(200);
+		res.setContentType("text/plain");
+		res.setBody("Result: " + cgi.getCGIResponse());
+		res.sendResponse();
+	}
+	else
+		res.setStatus(200);
 }

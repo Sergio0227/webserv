@@ -1,6 +1,7 @@
 #pragma once
 #include "Socket.hpp"
 #include "Config.hpp"
+#include "HttpResponse.hpp"
 
 class HttpServer : public Socket
 {
@@ -12,12 +13,11 @@ class HttpServer : public Socket
 		std::map<int, ClientInfo>	_client_info;
 
 		HttpServer();
-		void	readRequest(ClientInfo &info);
-		void	parseRequestLine(ClientInfo &info);
-		void	sendErrorResponse(ClientInfo &info);
+		void	readRequest(ClientInfo &info, HttpResponse &res);
+		void	parseRequestLine(ClientInfo &info, HttpResponse &res);
+		void	sendErrorResponse(ClientInfo &info, HttpResponse &res);
 		void	parseRequestBody(ClientInfo &info);
-		void	executeResponse(ClientInfo &info);
-		void	sendHttpResponse(ClientInfo &info, const char *location, const char *content_type, std::string &body);
+		void	executeResponse(ClientInfo &info, HttpResponse &res);
 		size_t	parseRequestHeader(ClientInfo &info);
 		
 		//void serveImage(int client_fd, const std::string &filePath);
@@ -32,6 +32,8 @@ class HttpServer : public Socket
 		bool checkBodySize(ClientInfo &info);
 
         std::string constructBodyForDirList(ClientInfo &info);
+
+        void runCGI(ClientInfo &info, HttpResponse &res);
 
     public:
 		HttpServer(Config *conf, short port, std::string ip, int backlog, bool debug);
