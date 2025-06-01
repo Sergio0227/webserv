@@ -17,7 +17,8 @@ class Brain
 		std::vector<std::string>				_locations_keys;
 		std::vector<int>						_server_sockets;
 		fd_set									_send_fd_set, _recv_fd_set;
-		std::map<int, bool> _client_write_pending;
+		std::map<int, HttpResponse>				_pending_responses;
+
 
 		void	splitServers(std::vector<std::string>);
 		void	initServerConfigs();

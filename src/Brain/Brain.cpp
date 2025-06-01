@@ -52,19 +52,43 @@ void Brain::handleConnections()
 			else if (FD_ISSET(i, &recv_fd_set_cpy))
 			{
 				HttpServer* server = _client_to_serv_map[i];
-				if (!server->handleRequest(i))
-				{
-					if (FD_ISSET(i, &_send_fd_set))
-						removeFdFromSet(i, _send_fd_set);
-					if (FD_ISSET(i, &_recv_fd_set))
-						removeFdFromSet(i, _recv_fd_set);
-					_client_to_serv_map.erase(i);
-				}
+				HttpResponse res = server->handleRequest(i);
+				std::cout << "err: " << res.getError() << std::endl;
+				_pending_responses.insert(std::make_pair(i, res));
+				addFdToSet(i, _send_fd_set);
+				removeFdFromSet(i, _recv_fd_set);
 			}
 			else if (FD_ISSET(i, &send_fd_set_cpy))
 			{
-				std::cout << "ok" << std::endl;
-				//send data
+				
+				std::map<int, HttpResponse>::iterator it = _pending_responses.find(i);
+				if (it != _pending_responses.end())
+				{
+					HttpResponse &res = it->second;
+					std::cout << "status2: " << res.getClientStatus()  << std::endl;
+					res.sendResponse();
+					if (res.getError())
+					{
+						if (FD_ISSET(i, &_send_fd_set))
+							removeFdFromSet(i, _send_fd_set);
+						// if (FD_ISSET(i, &_recv_fd_set))
+						// 	removeFdFromSet(i, _recv_fd_set);
+						close(i);
+						_client_to_serv_map.erase(i);
+						_pending_responses.erase(i);
+					}
+					else
+					{
+						removeFdFromSet(i, _send_fd_set);
+						// removeFdFromSet(i, _recv_fd_set);
+						_pending_responses.erase(i);
+					}
+						
+				}
+				else
+				{
+					std::cerr << "[ERROR] FD " << i << " not found in _pending_responses." << std::endl;
+				}
 			}
 		}
 	}

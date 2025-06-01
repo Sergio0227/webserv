@@ -41,7 +41,7 @@ class HttpServer : public Socket
 
 		int			getSocket();
         int			acceptConnections();
-        bool		handleRequest(int client_fd);
+        HttpResponse	handleRequest(int client_fd);
 		ClientInfo &getClientInfoElem(int fd);
 };
 

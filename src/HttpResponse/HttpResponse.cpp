@@ -6,16 +6,30 @@ HttpResponse::HttpResponse(ClientInfo &info) : _info(info)
 	_body = "";
 	_content_type = "";
 	_location = "";
+	_con = "";
+	_err = -1;
 }
 
-
+HttpResponse& HttpResponse::operator=(const HttpResponse& other)
+{
+	if (this != &other)
+	{
+		_response = other._response;
+		_body = other._body;
+		_content_type = other._content_type;
+		_location = other._location;
+		_con = other._con;
+		_err = other._err;
+	}
+	return *this;
+}
 void HttpResponse::setStatus(int code)
 {
 	_info.status_code = code;
 	_info.status_msg = getStatusMessage(code);
 }
 
-void HttpResponse::buildResponse(const std::string &c_status)
+void HttpResponse::buildResponse()
 {
 	std::ostringstream oss;
 	oss << _info.status_code;
@@ -28,7 +42,7 @@ void HttpResponse::buildResponse(const std::string &c_status)
 	if (!_content_type.empty())
 		_response += "Content-Type: " + _content_type + "\r\n";
 	_response += "Content-Length: " + body_len + "\r\n";
-	_response += "Connection: " + c_status + "\r\n";
+	_response += "Connection: " + _con + "\r\n";
 	if (!_location.empty())
 		_response += "Location: " + _location + "\r\n";
 	_response += "\r\n";
@@ -50,10 +64,30 @@ void HttpResponse::setLocation(const std::string &loc)
 	_location = loc;
 }
 
-void HttpResponse::sendResponse(const std::string &c_status)
+void HttpResponse::sendResponse()
 {
-	buildResponse(c_status);
+	buildResponse();
 	int bytes_sent = send(_info.fd, _response.c_str(), _response.size(), 0);
 	if (bytes_sent < 0)
 		throw std::runtime_error("send error");
+}
+
+void HttpResponse::setConnection(const std::string &con)
+{
+	_con = con;
+}
+
+void HttpResponse::setError(int err)
+{
+	_err = err;
+}
+
+int	HttpResponse::getError()
+{
+	return _err;
+}
+
+int HttpResponse::getClientStatus()
+{
+	return _info.status_code;
 }

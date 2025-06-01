@@ -45,7 +45,7 @@ int HttpServer::acceptConnections()
 
 //parse request to methods, based on method execute response or handle error
 
-bool HttpServer::handleRequest(int client_fd)
+HttpResponse HttpServer::handleRequest(int client_fd)
 {
 	ClientInfo &info = _client_info[client_fd];
 	HttpResponse res(info);
@@ -63,17 +63,19 @@ bool HttpServer::handleRequest(int client_fd)
 	{
 		if (_debug)
 			logMessage(DEBUG, _socket_fd,"Failed ", &info, 1);
+		res.setError(1);
 		sendErrorResponse(info, res);
-		close(client_fd);
 		if (_debug)
 			logMessage(DEBUG,  _socket_fd, "Connection closed", &_client_info[client_fd], 0);
-		_client_info[client_fd].reset();
+		
 		_client_info.erase(client_fd);
-		return false;
+		return res;
 	}
-	_client_info[client_fd].reset();
+	
 	_client_info.erase(client_fd);
-	return true;
+	res.setError(0);
+	//std::cout << "status1: " << res.getClientStatus() << std::endl;
+	return res;
 }
 
 //reads request and parses request to map<int client_fd, struct ClientInfo>
@@ -223,7 +225,7 @@ void HttpServer::sendErrorResponse(ClientInfo &info, HttpResponse &res)
 		res.setBody(body);
 		res.setContentType("text/html");
 	}
-	res.sendResponse("close");
+	res.setConnection("close");
 }
 
 //parses the Client-Request-Header to a map<string, string> and returns content-length
@@ -343,7 +345,7 @@ void HttpServer::executeResponse(ClientInfo &info, HttpResponse &res)
 		}
 		
 	}
-	res.sendResponse("keep-alive");
+	res.setConnection("keep-alive");
 	if (_debug)
 		logMessage(DEBUG, _socket_fd, "", &info, 1);
 }
@@ -588,8 +590,8 @@ void HttpServer::runCGI(ClientInfo &info, HttpResponse &res)
 		res.setStatus(200);
 		res.setContentType("text/plain");
 		res.setBody("Result: " + cgi.getCGIResponse());
-		res.sendResponse("keep-alive");
+		res.setConnection("keep-alive");
 	}
 	else
-		res.setStatus(200);
+		res.setStatus(500);
 }
