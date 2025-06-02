@@ -53,42 +53,40 @@ void Brain::handleConnections()
 			{
 				HttpServer* server = _client_to_serv_map[i];
 				HttpResponse res = server->handleRequest(i);
-				std::cout << "err: " << res.getError() << std::endl;
 				_pending_responses.insert(std::make_pair(i, res));
+				
 				addFdToSet(i, _send_fd_set);
 				removeFdFromSet(i, _recv_fd_set);
 			}
 			else if (FD_ISSET(i, &send_fd_set_cpy))
 			{
-				
+				HttpServer* server = _client_to_serv_map[i];
 				std::map<int, HttpResponse>::iterator it = _pending_responses.find(i);
 				if (it != _pending_responses.end())
 				{
 					HttpResponse &res = it->second;
-					std::cout << "status2: " << res.getClientStatus()  << std::endl;
 					res.sendResponse();
 					if (res.getError())
 					{
-						if (FD_ISSET(i, &_send_fd_set))
-							removeFdFromSet(i, _send_fd_set);
-						// if (FD_ISSET(i, &_recv_fd_set))
-						// 	removeFdFromSet(i, _recv_fd_set);
+						removeFdFromSet(i, _recv_fd_set);
 						close(i);
 						_client_to_serv_map.erase(i);
 						_pending_responses.erase(i);
+						server->eraseClientFromMap(i);
+						continue;
 					}
 					else
 					{
-						removeFdFromSet(i, _send_fd_set);
-						// removeFdFromSet(i, _recv_fd_set);
 						_pending_responses.erase(i);
+						addFdToSet(i, _recv_fd_set);
 					}
-						
+					removeFdFromSet(i, _send_fd_set);
 				}
 				else
 				{
 					std::cerr << "[ERROR] FD " << i << " not found in _pending_responses." << std::endl;
 				}
+				
 			}
 		}
 	}
@@ -172,7 +170,10 @@ Brain::~Brain()
 			else
 			{
 				HttpServer *server = _client_to_serv_map[i];
-				logMessage(INFO, server->getSocket(), "Client connection closed.", &server->getClientInfoElem(i), 0);
+				std::ostringstream oss;
+				oss << i;
+				const std::string msg =  "Client_ID: " + oss.str() + " | Connection closed.";
+				logMessage(INFO, server->getSocket(), msg, NULL, 0);
 			}
 			close(i);
 			removeFdFromSet(i, _recv_fd_set);
@@ -313,5 +314,12 @@ void	Brain::addFdToSet(int fd, fd_set &fd_set)
 void	Brain::removeFdFromSet(int fd, fd_set &fd_set)
 {
 	FD_CLR(fd, &fd_set);
-	_max_fd--;
+	for (int i = FD_SETSIZE - 1; i >= 0; --i)
+	{
+			if (FD_ISSET(i, &_recv_fd_set) || FD_ISSET(i, &_send_fd_set))
+			{
+				_max_fd = i;
+				break;
+			}
+	}
 }

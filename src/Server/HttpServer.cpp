@@ -31,6 +31,7 @@ int HttpServer::acceptConnections()
 	size_t addr_len = sizeof(client_addr);
 	int client_fd;
 
+
 	if ((client_fd = accept(_socket_fd, (struct sockaddr *)&client_addr, (socklen_t *)&addr_len)) < 0)
 	{
 		logMessage(ERROR, _socket_fd, "Error accepting client connection. Continuing...", NULL, 0);
@@ -67,14 +68,9 @@ HttpResponse HttpServer::handleRequest(int client_fd)
 		sendErrorResponse(info, res);
 		if (_debug)
 			logMessage(DEBUG,  _socket_fd, "Connection closed", &_client_info[client_fd], 0);
-		
-		_client_info.erase(client_fd);
-		return res;
 	}
-	
-	_client_info.erase(client_fd);
-	res.setError(0);
-	//std::cout << "status1: " << res.getClientStatus() << std::endl;
+	else
+		res.setError(0);
 	return res;
 }
 
@@ -85,6 +81,8 @@ void HttpServer::readRequest(ClientInfo &info, HttpResponse &res)
 	char buffer[1024];
 	int bytes_read = 0;
 	size_t total_read = 0;
+	info.reset();
+
 
 	while (true)
 	{
@@ -591,7 +589,14 @@ void HttpServer::runCGI(ClientInfo &info, HttpResponse &res)
 		res.setContentType("text/plain");
 		res.setBody("Result: " + cgi.getCGIResponse());
 		res.setConnection("keep-alive");
+		if (_debug)
+			logMessage(DEBUG, _socket_fd, "", &info, 1);
 	}
 	else
 		res.setStatus(500);
+}
+
+void HttpServer::eraseClientFromMap(int fd)
+{
+	_client_info.erase(fd);
 }

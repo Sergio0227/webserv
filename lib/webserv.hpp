@@ -137,9 +137,8 @@ std::string getStringMethod(Methods method);
 
 std::string getCurrentTime();
 std::string							getStatusMessage(int code);
+std::string getMimeType(const std::string &ext);
 std::pair<std::string, std::string> getPairLog(LogType level);
-
-
 
 // formatter
 std::vector<std::string> storeFormatedFile(std::string config_file_path);

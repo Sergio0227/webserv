@@ -6,7 +6,7 @@ class HttpResponse
 {
     private:
 		
-		ClientInfo	_info;
+		ClientInfo	&_info;
 		std::string _response;
 		std::string _body;
 		std::string _content_type;
@@ -19,6 +19,7 @@ class HttpResponse
 		
 
     public:
+		
 		HttpResponse(ClientInfo &info);
 		HttpResponse& operator=(const HttpResponse& other);
 		void setStatus(int code);

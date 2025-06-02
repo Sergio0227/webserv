@@ -43,6 +43,7 @@ class HttpServer : public Socket
         int			acceptConnections();
         HttpResponse	handleRequest(int client_fd);
 		ClientInfo &getClientInfoElem(int fd);
+		void eraseClientFromMap(int fd);
 };
 
 

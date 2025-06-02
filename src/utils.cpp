@@ -162,6 +162,21 @@ std::string getStatusMessage(int code)
 		return "Unknown Error";
 }
 
+std::string getMimeType(const std::string &ext)
+{
+	std::map<std::string, std::string> mime_map;
+	mime_map[".html"] = "text/html";
+	mime_map[".css"] = "text/css";
+	mime_map[".png"] = "image/png";
+	mime_map[".jpg"] = "image/jpeg";
+	mime_map[".jpeg"] = "image/jpeg";
+	
+    if (mime_map.find(ext) != mime_map.end())
+		return mime_map[ext];
+	else
+		return "application/octet-stream";
+}
+
 bool emailExists(ClientInfo &info)
 {
 	std::fstream file("var/www/data/users.csv", std::ios::in);
@@ -313,8 +328,11 @@ bool safeExtract(std::string& input, char delim, std::string& out)
 
 std::string retrieveContentType(ClientInfo &info)
 {
-	std::string &full_str = info.info.headers["Accept"];
-	return (full_str.substr(0, full_str.find(",")));
+	size_t dot_pos = info.info.path.rfind('.');
+	if (dot_pos == std::string::npos)
+		return "application/octet-stream";
+	std::string ext = info.info.path.substr(dot_pos);
+	return (getMimeType(ext));
 }
 
 void	setNonBlockingFD(int fd)
