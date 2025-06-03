@@ -292,7 +292,7 @@ void Brain::parseLocation(size_t *i, int server_index, std::string location_name
         else if (param == "index")
             ref_loc.setIndex(value);
         else if (param == "autoindex")
-            ref_loc.setAutoindex(value);
+            ref_loc.setAutoindex(value, server_index);
         else if (param == "alias")
             ref_loc.setAlias(value);
         else if (param == "return")

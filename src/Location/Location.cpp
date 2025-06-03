@@ -1,5 +1,4 @@
 #include "Location.hpp"
-
 #include "Config.hpp"
 
 Location::Location()
@@ -54,7 +53,7 @@ void Location::setPath(std::string& path)
     this->_path = path;
 }
 
-void Location::setAutoindex(std::string& autoindex)
+void Location::setAutoindex(std::string& autoindex, int server_index)
 {
     static std::string set = "";
     if (set == this->getPath())
@@ -63,7 +62,9 @@ void Location::setAutoindex(std::string& autoindex)
     if (autoindex != "on" && autoindex != "off")
         throw Config::ConfigException("Invalid Autoindex, Off or On expected");
     this->_autoindex = (autoindex == "on");
-    set = this->getPath();
+    std::ostringstream oss;
+    oss << server_index;
+    set = this->getPath() + oss.str();
 }
 
 

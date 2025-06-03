@@ -29,7 +29,7 @@ class Location
         void setClientMaxBodySize(std::string& client_max_body_size);
         void setReturnValue(std::string& return_value);
         void setIndex(std::string& index);
-        void setAutoindex(std::string& autoindex);
+        void setAutoindex(std::string& autoindex, int server_index);
         void setAllowedMethods(std::string& allowed_methods);
 		std::string getPath() const;
 		void setErrorPages(std::map<short, std::string> &error_pages);
