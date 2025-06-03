@@ -22,6 +22,7 @@ void Brain::handleConnections()
 	fd_set  recv_fd_set_cpy;
 	fd_set  send_fd_set_cpy;
 	struct timeval time;
+	int ready;
 
 	while (g_flag)
 	{
@@ -30,13 +31,15 @@ void Brain::handleConnections()
 		recv_fd_set_cpy = _recv_fd_set;
 		send_fd_set_cpy = _send_fd_set;
 
-		if (select(_max_fd + 1, &recv_fd_set_cpy, &send_fd_set_cpy, NULL, &time) < 0)
+		ready = select(_max_fd + 1, &recv_fd_set_cpy, &send_fd_set_cpy, NULL, &time);
+		if (ready == 0)
+			continue;
+		if (ready < 0)
 		{
 			if (errno == EINTR)
 				continue;
 			else
 				throw std::runtime_error(std::string("select() failed: ") + strerror(errno));
-
 		}	
 		for (int i = 0; i <= _max_fd; ++i)
 		{

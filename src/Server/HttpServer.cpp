@@ -105,6 +105,7 @@ void HttpServer::readRequest(ClientInfo &info, HttpResponse &res)
 			info.info.body.body_size = parseRequestHeader(info);
 			if (!checkBodySize(info))
 			{
+				std::cout << "ok" << std::endl;
 				res.setStatus(413), info.close_connection = true;
 				return ;
 			}
