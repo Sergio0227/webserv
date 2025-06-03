@@ -35,7 +35,8 @@ void Brain::handleConnections()
 			if (errno == EINTR)
 				continue;
 			else
-				throw std::runtime_error("Error: select");
+				throw std::runtime_error(std::string("select() failed: ") + strerror(errno));
+
 		}	
 		for (int i = 0; i <= _max_fd; ++i)
 		{

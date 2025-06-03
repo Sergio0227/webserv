@@ -328,10 +328,20 @@ bool safeExtract(std::string& input, char delim, std::string& out)
 
 std::string retrieveContentType(ClientInfo &info)
 {
+	std::string ext;
 	size_t dot_pos = info.info.path.rfind('.');
+
 	if (dot_pos == std::string::npos)
-		return "application/octet-stream";
-	std::string ext = info.info.path.substr(dot_pos);
+	{
+		dot_pos = info.info.absolute_path.rfind('.');
+		if (dot_pos == std::string::npos)
+			return "application/octet-stream";
+		else
+			ext = info.info.absolute_path.substr(dot_pos);
+
+	}
+	else
+		ext = info.info.path.substr(dot_pos);
 	return (getMimeType(ext));
 }
 
