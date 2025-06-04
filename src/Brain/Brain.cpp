@@ -34,6 +34,7 @@ void Brain::handleConnections()
 		ready = select(_max_fd + 1, &recv_fd_set_cpy, &send_fd_set_cpy, NULL, &time);
 		if (ready == 0)
 			continue;
+			
 		if (ready < 0)
 		{
 			if (errno == EINTR)
@@ -73,6 +74,7 @@ void Brain::handleConnections()
 					if (res.getError())
 					{
 						removeFdFromSet(i, _recv_fd_set);
+						removeFdFromSet(i, _send_fd_set);
 						close(i);
 						_client_to_serv_map.erase(i);
 						_pending_responses.erase(i);
