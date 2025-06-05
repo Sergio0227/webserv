@@ -170,7 +170,8 @@ std::string getMimeType(const std::string &ext)
 	mime_map[".png"] = "image/png";
 	mime_map[".jpg"] = "image/jpeg";
 	mime_map[".jpeg"] = "image/jpeg";
-	
+	mime_map[".ico"] = "image/x-icon";
+
     if (mime_map.find(ext) != mime_map.end())
 		return mime_map[ext];
 	else
