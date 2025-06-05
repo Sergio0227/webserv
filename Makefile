@@ -14,7 +14,7 @@ OBJS		= ${SRC:.cpp=.o}
 NAME		= webserv
 CFLAGS		= -Werror -Wall -Wextra
 CPPFLAGS	= -std=c++98 -g -O0
-INCLUDES	= -I./lib -g
+INCLUDES	= -I./lib
 				
 CC			= c++
 RM			= rm -rf

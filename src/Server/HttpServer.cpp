@@ -105,7 +105,6 @@ void HttpServer::readRequest(ClientInfo &info, HttpResponse &res)
 			info.info.body.body_size = parseRequestHeader(info);
 			if (!checkBodySize(info))
 			{
-				std::cout << "ok" << std::endl;
 				res.setStatus(413), info.close_connection = true;
 				return ;
 			}
@@ -402,11 +401,14 @@ int HttpServer::checkPath(ClientInfo &info, std::string &path, std::string &meth
 		else
 			full_path = _conf->getRoot();
 		is_dir = isDirectory(full_path);
-		if (is_dir && !loc->getIndex().empty())
+		if (is_dir)
 		{
 			if (full_path[full_path.size() - 1] != '/')
 				full_path += "/";
-			full_path += loc->getIndex();
+			if (!loc->getIndex().empty())
+				full_path += loc->getIndex();
+			else
+				full_path += _conf->getIndex();
 		}
 		autoindex_enabled = loc->getAutoindex();
 		if (!loc->getIndex().empty())
