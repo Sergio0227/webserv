@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>User Dashboard</title>
+	<link rel="stylesheet" href="/style.css">
+	<script>
+		function uploadFile() {
+			var fileInput = document.getElementById('fileInput');
+			var file = fileInput.files[0];
+
+			if (file) {
+				var formData = new FormData();
+				formData.append('file', file);
+				fetch('/upload',
+					{
+						method: 'POST',
+						body: formData,
+					})
+					.then(response => {
+						if (response.ok) {
+							alert('File uploaded successfully!');
+						}
+						else {
+							alert('Failed to upload file');
+						}
+					})
+					.catch(error => {
+						console.error('Error:', error);
+						alert('An error occurred during the file upload');
+					});
+			}
+			else {
+				alert('Please select a file to upload');
+			}
+		}
+		function deleteEmail() {
+			const email = document.getElementById('emailToDelete').value;
+
+			if (!email) {
+				alert("Please enter your email.");
+				return;
+			}
+
+			const encodedEmail = encodeURIComponent(email);
+
+			fetch(`/delete_email?email=${encodedEmail}`,
+				{
+					method: 'DELETE'
+				})
+				.then(response => response.text())
+				.then(data => {
+					alert(data);
+				})
+				.catch(error => {
+					alert("Error: " + error);
+				});
+		}
+	</script>
+</head>
+
+<body>
+	<div class="container" style="width: 650px;">
+		<h2>Login successfull!</h2>
+		<h3>Upload a Picture (PNG, JPG, JPEG)</h3>
+		<input type="file" id="fileInput" accept=".png, .jpg, .jpeg" />
+		<button type="button" onclick="uploadFile()">Upload</button>
+
+		<h3 style="margin-top: 50px;">Delete Your Email</h3>
+		<input type="email" id="emailToDelete" placeholder="Enter your email" required />
+		<button type="button" onclick="deleteEmail()">Delete Email</button>
+		<a href="/" style="text-decoration: none;"><button type="button" style="background-color: red;">Logout</button></a>
+
+	</div>
+</body>
+
+</html>

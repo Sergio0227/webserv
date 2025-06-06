@@ -1,0 +1,174 @@
+/* Reset and base */
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+body {
+	background: linear-gradient(to right, #f8f9fa, #e9ecef);
+	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	color: #333;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+	padding: 40px 20px;
+}
+
+/* Container for Welcome page buttons */
+.container {
+	background: white;
+	padding: 40px 30px;
+	border-radius: 12px;
+	box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+	text-align: center;
+	margin: auto 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+/* Welcome Page */
+.container h1 {
+	color: #007bff;
+	margin-bottom: 20px;
+}
+
+.container p {
+	margin-bottom: 30px;
+	font-size: 1.1em;
+}
+
+.container button {
+	background-color: #007bff;
+	color: white;
+	border: none;
+	padding: 14px 0;
+	margin: 10px 0;
+	font-size: 1.1em;
+	border-radius: 6px;
+	cursor: pointer;
+	width: 100%;
+	transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.container button:hover {
+	background-color: #0056b3;
+	transform: scale(1.05);
+}
+
+/* Form common styles (Login, Register) */
+form {
+	background-color: white;
+	padding: 40px 30px;
+	border-radius: 12px;
+	box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+	width: 100%;
+	box-sizing: border-box;
+	text-align: center;
+	margin-bottom: 40px;
+}
+
+h2,
+h3 {
+	color: #007bff;
+	margin-bottom: 24px;
+	text-align: center;
+}
+
+/* Labels */
+label {
+	display: block;
+	margin-bottom: 8px;
+	font-weight: 600;
+	color: #333;
+	margin-top: 16px;
+	text-align: left;
+}
+
+/* Inputs */
+input[type="email"],
+input[type="password"],
+input[type="file"] {
+	width: 100%;
+	padding: 12px 10px;
+	border: 1.5px solid #ccc;
+	border-radius: 6px;
+	font-size: 1em;
+	transition: border-color 0.3s ease;
+	box-sizing: border-box;
+}
+
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="file"]:focus {
+	border-color: #007bff;
+	outline: none;
+}
+
+/* Submit and action buttons */
+button[type="submit"],
+button[type="button"] {
+	background-color: #007bff;
+	color: white;
+	border: none;
+	padding: 14px 0;
+	margin-top: 24px;
+	font-size: 1.1em;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: background-color 0.3s ease, transform 0.2s ease;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+button[type="submit"]:hover,
+button[type="button"]:hover {
+	background-color: #0056b3;
+	transform: scale(1.05);
+}
+
+/* Home buttons inside links */
+a button[type="button"] {
+	width: auto;
+	padding: 12px 25px;
+	margin: 20px auto 40px;
+	background-color: #6c757d;
+	display: block;
+	color: white;
+	border-radius: 6px;
+	transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+a{
+	text-decoration: none;
+}
+
+a button[type="button"]:hover {
+	background-color: #495057;
+	transform: scale(1.05);
+}
+
+/* User Dashboard specific styling */
+body.dashboard {
+	padding-top: 60px;
+	align-items: center;
+}
+
+.dashboard h2,
+.dashboard h3 {
+	margin-bottom: 20px;
+}
+
+.dashboard input[type="email"],
+.dashboard input[type="file"] {
+	max-width: 300px;
+	margin-bottom: 20px;
+}
+
+.dashboard button[type="button"] {
+	max-width: 300px;
+	margin-bottom: 40px;
+}
