@@ -31,59 +31,64 @@ void Brain::handleConnections()
 		send_fd_set_cpy = _send_fd_set;
 
 		ready = select(_max_fd + 1, &recv_fd_set_cpy, &send_fd_set_cpy, NULL, &time);
-		if (ready == 0)
-			continue;
 		if (ready < 0)
 		{
 			if (errno == EINTR)
 				continue;
 			else
 				throw std::runtime_error(std::string("select failed"));
-		}	
-		for (int i = 0; i <= _max_fd; ++i)
-		{
-			if (FD_ISSET(i, &recv_fd_set_cpy) && ((j = isServerFd(i)) != INT_MAX))
-			{
-				int client_fd = _servers[j]->acceptConnections();
-				if (client_fd < 0)
-					continue;
-				setNonBlockingFD(client_fd);
-				addFdToSet(client_fd, _recv_fd_set);
-				_client_start_time[client_fd] = std::time(NULL);
-				_client_to_serv_map[client_fd] = _servers[j];
-			}
-			else if (FD_ISSET(i, &recv_fd_set_cpy))
-			{
-				HttpServer* server = _client_to_serv_map[i];
-				HttpResponse res = server->handleRequest(i);
-				_pending_responses.insert(std::make_pair(i, res));
-				addFdToSet(i, _send_fd_set);
-				removeFdFromSet(i, _recv_fd_set);
-			}
-			else if (FD_ISSET(i, &send_fd_set_cpy))
-			{
-				std::map<int, HttpResponse>::iterator it = _pending_responses.find(i);
-				if (it != _pending_responses.end())
-				{
-					HttpResponse &res = it->second;
-					res.sendResponse();
-					_client_start_time[i] = std::time(NULL);
-					if (res.getError())
-					{
-						closeClientConnection(i, 0);
-						continue;
-					}
-					_pending_responses.erase(i);
-					addFdToSet(i, _recv_fd_set);
-					removeFdFromSet(i, _send_fd_set);
-				}
-				else
-					throw std::runtime_error("[ERROR] FD not found in Pending Responses.");
-			}
-			int fd = timeOutHandler();
-			if (fd > 0)
-				closeClientConnection(fd, 1);
 		}
+		if (ready != 0)
+		{
+			for (int i = 0; i <= _max_fd; ++i)
+			{
+				if (FD_ISSET(i, &recv_fd_set_cpy) && ((j = isServerFd(i)) != INT_MAX))
+				{
+					int client_fd = _servers[j]->acceptConnections();
+					if (client_fd < 0)
+						continue;
+					setNonBlockingFD(client_fd);
+					addFdToSet(client_fd, _recv_fd_set);
+					_client_start_time[client_fd] = std::time(NULL);
+					_client_to_serv_map[client_fd] = _servers[j];
+				}
+				else if (FD_ISSET(i, &recv_fd_set_cpy))
+				{
+					HttpServer* server = _client_to_serv_map[i];
+					HttpResponse res = server->handleRequest(i);
+					_pending_responses.insert(std::make_pair(i, res));
+					addFdToSet(i, _send_fd_set);
+					removeFdFromSet(i, _recv_fd_set);
+				}
+				else if (FD_ISSET(i, &send_fd_set_cpy))
+				{
+					std::map<int, HttpResponse>::iterator it = _pending_responses.find(i);
+					if (it != _pending_responses.end())
+					{
+						HttpResponse &res = it->second;
+						res.sendResponse();
+						_client_start_time[i] = std::time(NULL);
+						if (res.getError())
+						{
+							closeClientConnection(i, 0);
+							continue;
+						}
+						_pending_responses.erase(i);
+						addFdToSet(i, _recv_fd_set);
+						removeFdFromSet(i, _send_fd_set);
+					}
+					else
+						throw std::runtime_error("[ERROR] FD not found in Pending Responses.");
+				}
+			}
+		}
+		int fd = timeOutHandler();
+		if (fd > 0)
+		{
+			closeClientConnection(fd, 1);
+			_client_start_time.erase(fd);
+		}
+			
 	}
 }
 
@@ -300,10 +305,10 @@ int		Brain::timeOutHandler()
 			timeout_res.setConnection("close");
 			timeout_res.setBody("");
 			timeout_res.sendResponse();
-			return it->first;
+			return (it->first);
 		}
 	}
-	return -1;
+	return (-1);
 }
 
 void	Brain::closeClientConnection(int fd, int flag)
