@@ -8,17 +8,17 @@
 class Brain
 {
 	private:
-		int	_nb_servers;
-		int _max_fd;
+		int										_nb_servers;
+		int										_max_fd;
 		std::vector<std::vector<std::string> >	_config_files;
 		std::vector<Config*>					_server_conf;
-		std::vector<HttpServer*>				_servers;
-		std::map<int, HttpServer*>				_client_to_serv_map; //used to associate client with server
 		std::vector<std::string>				_locations_keys;
 		std::vector<int>						_server_sockets;
-		fd_set									_send_fd_set, _recv_fd_set;
+		std::vector<HttpServer*>				_servers;
+		std::map<int, HttpServer*>				_client_to_serv_map; //used to associate client with server
 		std::map<int, HttpResponse>				_pending_responses;
-
+		std::map<int, std::time_t>				_client_start_time;
+		fd_set									_send_fd_set, _recv_fd_set;
 
 		void	splitServers(std::vector<std::string>);
 		void	initServerConfigs();
@@ -26,12 +26,14 @@ class Brain
 		void	parseLocation(size_t *i, int server_index, std::string location_name);
 		void	handleConnections();
 		void	setupServers();
+		void	closeClientConnection(int fd, int flag);
+		void	addFdToSet(int fd, fd_set &fd_set);
+		void	removeFdFromSet(int fd, fd_set &fd_set);
 		int		isServerFd(int i);
-
+		int		timeOutHandler();
+		
 	public:
 		Brain(std::vector<std::string>& config_files);
 		~Brain();
 		int	getNbServers();
-        void addFdToSet(int fd, fd_set &fd_set);
-        void removeFdFromSet(int fd, fd_set &fd_set);
 };

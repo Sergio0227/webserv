@@ -2,7 +2,6 @@
 
 #include "ClientInfo.hpp"
 #include "CGI.hpp"
-
 #include <iostream>
 #include <stdexcept>
 #include <unistd.h>
@@ -33,6 +32,7 @@
 #define MAX_CONTENT_LENGTH 1000000 //1mb maxbody if maxbody doesnt exist in config
 #define ERROR_PATH_404 404
 #define ERROR_METHOD_405 405
+#define TIMEOUT_SEC 10
 
 /*
 ---Function Prototypes in Header----
@@ -104,43 +104,24 @@ enum LogType
 	SUCCESS
 };
 
-void logMessage(LogType level, int server_fd, const std::string& message, ClientInfo *ptr_info, int flag);
-void		printClientInfo(ClientInfo &info);
-
-Methods getEnumMethod(std::string &method);
-
-bool	emailExists(ClientInfo &info);
-
-bool passwordCorrect(BodyInfo &body);
-
-void storeCredential(BodyInfo &body, const char *name);
-
-std::string decodeUrl(const std::string &encoded);
-
-bool isDirectory(const std::string &path);
-
-bool isRegularFile(const std::string &path);
-
-bool hasReadAccess(const std::string &path);
-
-std::string buildUploadFilename(std::string &data, const char *path);
-
-int countFilesInsideDir(const char *path);
-
-bool safeExtract(std::string &input, char delim, std::string &out);
-
-std::string retrieveContentType(ClientInfo &info);
-
-void setNonBlockingFD(int fd);
-
-std::string getStringMethod(Methods method);
-
-std::string getCurrentTime();
+void								logMessage(LogType level, int server_fd, const std::string& message, ClientInfo *ptr_info, int flag);
+void								printClientInfo(ClientInfo &info);
+void								storeCredential(BodyInfo &body, const char *name);
+void								setNonBlockingFD(int fd);
+Methods								getEnumMethod(std::string &method);
+bool								emailExists(ClientInfo &info);
+bool								passwordCorrect(BodyInfo &body);
+bool								safeExtract(std::string &input, char delim, std::string &out);
+bool								isDirectory(const std::string &path);
+bool								isRegularFile(const std::string &path);
+bool								hasReadAccess(const std::string &path);
+std::string							getStringMethod(Methods method);
+std::string							getCurrentTime();
 std::string							getStatusMessage(int code);
-std::string getMimeType(const std::string &ext);
-std::pair<std::string, std::string> getPairLog(LogType level);
-
-// formatter
-std::vector<std::string> storeFormatedFile(std::string config_file_path);
-std::string trim(const std::string &str);
-
+std::string							getMimeType(const std::string &ext);
+std::string							trim(const std::string &str);
+std::string							retrieveContentType(ClientInfo &info);
+std::string							buildUploadFilename(std::string &data, const char *path);
+std::pair<std::string, std::string>	getPairLog(LogType level);
+std::vector<std::string>			storeFormatedFile(std::string config_file_path);
+int									countFilesInsideDir(const char *path);

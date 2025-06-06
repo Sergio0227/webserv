@@ -5,8 +5,7 @@
 #include <ctime>
 #include <netinet/in.h>
 
-
-enum Methods
+enum	Methods
 {
 	GET,
 	POST,
@@ -15,41 +14,44 @@ enum Methods
 	UNKNOWN_METHOD
 };
 
-struct BodyInfo
+struct	BodyInfo
 {
-	size_t body_size;
+	size_t		body_size;
 	std::string	body_str;
 	std::string	email;
 	std::string	passw;
-	void reset();
+
+	void		reset();
 };
 
-struct RequestInfo
+struct	RequestInfo
 {
 	std::string							request;
-	Methods								method;
+	std::string							boundary;
 	std::string							http_version;
 	std::string							path;
-	std::string absolute_path;
+	std::string							absolute_path;
 	std::string							query;
-	BodyInfo							body;
+	Methods								method;
 	std::map<std::string, std::string>	headers;
-	std::string boundary;
-	void reset();
+	BodyInfo							body;
+	
+	void								reset();
 };
 
-struct ClientInfo
+struct	ClientInfo
 {
 	int			fd;
-	bool		run_cgi;
-	bool dir_listening;
 	int			status_code;
-	std::string	status_msg;
+	bool		run_cgi;
+	bool		dir_listening;
+	bool		keep_alive;
 	bool		close_connection;
+	bool		file_uploaded;
+	std::string	status_msg;
 	sockaddr_in	addr;
 	time_t		connection_time;
-    bool		keep_alive;
 	RequestInfo	info;
-	bool file_uploaded;
-	void reset();
+	
+	void		reset();
 };
