@@ -426,7 +426,10 @@ int		HttpServer::checkPath(ClientInfo &info, std::string &path, std::string &met
 			else
 				full_path += _conf->getIndex();
 		}
-		autoindex_enabled = loc->getAutoindex();
+		if (loc->hasAutoindex())
+			autoindex_enabled = loc->getAutoindex();
+		else
+			autoindex_enabled = _conf->getAutoindex();
 		if (!loc->getIndex().empty())
 				autoindex_enabled = false;
 		if (!loc->isMethodAllowed(method))

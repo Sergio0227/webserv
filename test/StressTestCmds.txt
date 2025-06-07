@@ -1,0 +1,2 @@
+seq 50 | xargs -n1 -P50 curl -s http://localhost:8080 > /dev/null	#creates 50 tasks passes it to curl and xargs manages launching all 50 curls simultaneously.
+for i in $(seq 1 50); do curl http://localhost:8080; done		#connects and disconencts 50 times from server

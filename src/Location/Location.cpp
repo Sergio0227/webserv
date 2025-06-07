@@ -10,6 +10,7 @@ Location::Location()
 	this->_client_max_body_size = MAX_CONTENT_LENGTH;
 	this->_index = "";
 	this->_autoindex = false;
+	this->_has_autoindex = false;
 	this->_allowed_methods["GET"] = false;
 	this->_allowed_methods["POST"] = false;
 	this->_allowed_methods["DELETE"] = false;
@@ -49,6 +50,7 @@ void    Location::setAutoindex(std::string& autoindex, int server_index)
 	std::ostringstream oss;
 	oss << server_index;
 	set = this->getPath() + oss.str();
+	_has_autoindex = true;
 }
 
 
@@ -164,6 +166,11 @@ size_t Location::getClientMaxBodySize() const
 bool Location::getAutoindex() const
 {
 	return (_autoindex);
+}
+
+bool Location::hasAutoindex() const
+{
+	return (_has_autoindex);
 }
 
 bool Location::isMethodAllowed(std::string &meth)

@@ -16,6 +16,7 @@ class Location
         std::map<short, std::string>		_error_pages;
         std::string							_index;
         bool								_autoindex;
+		bool								_has_autoindex;
         std::string							_root;
 
     public:
@@ -41,7 +42,8 @@ class Location
 		unsigned long						getClientMaxBodySize() const;
 		std::string							getIndex() const;
 		bool								getAutoindex() const;
-		const std::map<short, std::string>& getErrorPages() const;
-		bool								isMethodAllowed(std::string &meth);
+        bool								hasAutoindex() const;
+        const std::map<short, std::string> &getErrorPages() const;
+        bool								isMethodAllowed(std::string &meth);
 		void								setPath(std::string &path);
 };
