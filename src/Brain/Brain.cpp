@@ -56,6 +56,11 @@ void Brain::handleConnections()
 				{
 					HttpServer* server = _client_to_serv_map[i];
 					HttpResponse res = server->handleRequest(i);
+					if (res.getError() == 2)
+					{
+						closeClientConnection(i, 2);
+						continue;
+					}
 					_pending_responses.insert(std::make_pair(i, res));
 					addFdToSet(i, _send_fd_set);
 					removeFdFromSet(i, _recv_fd_set);
@@ -67,7 +72,7 @@ void Brain::handleConnections()
 					{
 						HttpResponse &res = it->second;
 						res.sendResponse();
-						_client_start_time[i] = std::time(NULL);
+						_client_start_time[it->first] = std::time(NULL);
 						if (res.getError())
 						{
 							closeClientConnection(i, 0);
@@ -84,11 +89,7 @@ void Brain::handleConnections()
 		}
 		int fd = timeOutHandler();
 		if (fd > 0)
-		{
 			closeClientConnection(fd, 1);
-			_client_start_time.erase(fd);
-		}
-			
 	}
 }
 
@@ -325,6 +326,9 @@ void	Brain::closeClientConnection(int fd, int flag)
 		msg = "Connection closed.";
 	else if (flag == 1)
 		msg = "Connection closed due to timeout.";
+	else if (flag == 2)
+		msg = "Connection closed due to client.";
 	logMessage(INFO,  server->getSocket(), msg, &server->getClientInfoElem(fd), 0);
 	server->eraseClientFromMap(fd);
+	_client_start_time.erase(fd);
 }

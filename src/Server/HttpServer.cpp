@@ -52,6 +52,8 @@ HttpResponse	HttpServer::handleRequest(int client_fd)
 	info.run_cgi = false;
 	info.fd = client_fd;
 	readRequest(info, res);
+	if (res.getError() == 2)
+		return (res);
 	if (!info.close_connection && !info.run_cgi)
 		executeResponse(info, res);
 	else if (!info.close_connection && info.run_cgi)
@@ -86,7 +88,10 @@ void	HttpServer::readRequest(ClientInfo &info, HttpResponse &res)
 			return ;
 		}
 		if (bytes_read == 0)
-			break;
+		{
+			res.setError(2);
+			return;
+		}
 		buffer[bytes_read] = '\0';
 		info.info.request.append(buffer, bytes_read);
 		if (info.info.request.find("\r\n\r\n") != std::string::npos)
