@@ -366,7 +366,7 @@ std::string	HttpServer::parseFileToString(const char *filename)
 {
 	std::string str;
 
-	int fd = open(filename, O_RDONLY | O_NONBLOCK);
+	int fd = open(filename, O_RDONLY);
 	if (fd < 0)
 		return "";
 	char buffer[1024];
@@ -579,23 +579,6 @@ std::string	HttpServer::constructBodyForDirList(ClientInfo &info)
 	body += "</ul></body></html>";
 	return (body);
 }
-
-// void	HttpServer::runCGI(ClientInfo &info, HttpResponse &res)
-// {
-// 	CGI	cgi(info);
-
-// 	if (!info.close_connection)
-// 	{
-// 		res.setStatus(200);
-// 		res.setContentType("text/plain");
-// 		res.setBody("Result: " + cgi.getCGIResponse());
-// 		res.setConnection("keep-alive");
-// 		if (_debug)
-// 			logMessage(DEBUG, _socket_fd, "", &info, 1);
-// 	}
-// 	else
-// 		res.setStatus(500);
-// }
 
 void	HttpServer::eraseClientFromMap(int fd)
 {

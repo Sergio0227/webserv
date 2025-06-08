@@ -30,7 +30,7 @@ int		main(int argc, char *argv[])
 	{
 		std::vector<std::string>	configFile;
 		configFile = storeFormatedFile(config_file_path);
-		Brain brain(configFile);
+		Brain brain(configFile, ENABLE_DEBUG);
 	}
 	catch (std::exception &e)
 	{

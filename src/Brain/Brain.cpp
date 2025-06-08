@@ -1,7 +1,7 @@
 #include "Brain.hpp"
 #include <stdexcept>
 
-Brain::Brain(std::vector<std::string>& config_file)
+Brain::Brain(std::vector<std::string>& config_file, bool debug) : _debug(debug)
 {
 	_nb_servers = 0;
     _max_fd = 0;
@@ -135,12 +135,15 @@ void	Brain::handleCgiRead(int cgi_stdout_fd)
 	removeFdFromSet(cgi_stdout_fd, _recv_fd_set);
 	_cgi_read_fd_to_client.erase(cgi_stdout_fd);
 	HttpResponse &res = _pending_responses.at(client_fd);
+	res.setError(0);
 	res.setStatus(200);
 	res.setContentType("text/plain");
 	res.setBody("Result: " + cgi.getCGIResponse());
 	res.setConnection("keep-alive");
-	logMessage(DEBUG, server->getSocket(), "", &info, 1);
+	if (_debug)
+		logMessage(DEBUG, server->getSocket(), "", &info, 1);
 	addFdToSet(client_fd, _send_fd_set);
+	_client_cgi.erase(client_fd);
 }
 
 void	Brain::handleCGI(int fd, ClientInfo &info, HttpResponse &res)
@@ -186,7 +189,7 @@ void	Brain::setupServers()
 {
 	for(int i = 0; i < _nb_servers; i++)
 	{
-		HttpServer *server = new HttpServer(_server_conf[i], _server_conf[i]->getPort(),_server_conf[i]->getServerName(),  BACKLOG, true);
+		HttpServer *server = new HttpServer(_server_conf[i], _server_conf[i]->getPort(),_server_conf[i]->getServerName(),  BACKLOG, ENABLE_DEBUG);
 		_servers.push_back(server);
 		int server_fd = _servers[i]->getSocket();
 		_server_sockets.push_back(server_fd);
@@ -411,3 +414,41 @@ void	Brain::closeClientConnection(int fd, int flag)
 	server->eraseClientFromMap(fd);
 	_client_start_time.erase(fd);
 }
+
+void Brain::debugPrintState() const
+{
+	std::cout << "----- Current Brain Internal State -----" << std::endl;
+	std::cout << "\nServer sockets list:" << std::endl;
+	for (size_t i = 0; i < _server_sockets.size(); ++i)
+		std::cout << "  Socket[" << i << "] = " << _server_sockets[i] << std::endl;
+	std::cout << "\nMapping of clients to servers:" << std::endl;
+	for (std::map<int, HttpServer*>::const_iterator it = _client_to_serv_map.begin(); it != _client_to_serv_map.end(); ++it)
+		std::cout << "  Client FD " << it->first << " mapped to HttpServer instance" << std::endl;
+	std::cout << "\nResponses pending per client:" << std::endl;
+	for (std::map<int, HttpResponse>::const_iterator it = _pending_responses.begin(); it != _pending_responses.end(); ++it)
+		std::cout << "  Client FD " << it->first << " has a pending HttpResponse" << std::endl;
+	std::cout << "\nClient connection start times:" << std::endl;
+	for (std::map<int, std::time_t>::const_iterator it = _client_start_time.begin(); it != _client_start_time.end(); ++it)
+		std::cout << "  Client FD " << it->first << " connected at " << std::ctime(&it->second);
+	std::cout << "\nClients with active CGI instances:" << std::endl;
+	for (std::map<int, CGI>::const_iterator it = _client_cgi.begin(); it != _client_cgi.end(); ++it)
+		std::cout << "  Client FD " << it->first << " has an associated CGI object" << std::endl;
+	std::cout << "\nCGI write descriptors mapped to clients:" << std::endl;
+	for (std::map<int, int>::const_iterator it = _cgi_write_fd_to_client.begin(); it != _cgi_write_fd_to_client.end(); ++it)
+		std::cout << "  Write FD " << it->first << " belongs to client FD " << it->second << std::endl;
+	std::cout << "\nCGI read descriptors mapped to clients:" << std::endl;
+	for (std::map<int, int>::const_iterator it = _cgi_read_fd_to_client.begin(); it != _cgi_read_fd_to_client.end(); ++it)
+		std::cout << "  Read FD " << it->first << " belongs to client FD " << it->second << std::endl;
+	std::cout << "\nFile descriptors in FD sets:" << std::endl;
+	for (int fd = 0; fd <= _max_fd; ++fd)
+	{
+		if (FD_ISSET(fd, &_recv_fd_set))
+			std::cout << "  FD " << fd << " present in recv_fd_set" << std::endl;
+		if (FD_ISSET(fd, &_send_fd_set))
+			std::cout << "  FD " << fd << " present in send_fd_set" << std::endl;
+	}
+	std::cout << "\nNumber of servers: " << _nb_servers << std::endl;
+	std::cout << "Highest FD value (_max_fd): " << _max_fd << std::endl;
+	std::cout << "----------------------------------------" << std::endl;
+}
+

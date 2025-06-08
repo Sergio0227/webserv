@@ -10,6 +10,7 @@ class Brain
 	private:
 		int										_nb_servers;
 		int										_max_fd;
+		bool									_debug;
 		std::vector<std::vector<std::string> >	_config_files;
 		std::vector<Config*>					_server_conf;
 		std::vector<std::string>				_locations_keys;
@@ -40,9 +41,10 @@ class Brain
 		void	removeFdFromSet(int fd, fd_set &fd_set);
 		int		isServerFd(int i);
 		int		timeOutHandler();
+		void	debugPrintState() const;
 		
 	public:
-		Brain(std::vector<std::string>& config_files);
+		Brain(std::vector<std::string>& config_files, bool debug);
 		~Brain();
 		int	getNbServers();
 		

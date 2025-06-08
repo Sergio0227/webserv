@@ -87,7 +87,7 @@ void	logMessage(LogType level, int server_fd, const std::string& message, Client
 			msg.append(getStringMethod(ptr_info->info.method));
 			msg.append(" | Path: ");
 			msg.append(ptr_info->info.path);
-			msg.append(")  |  Server: (Code: ");
+			msg.append(")  |  Server -> (Code: ");
 			oss << ptr_info->status_code;
 			msg.append(oss.str());
 			msg.append(" | Msg: ");
@@ -267,6 +267,7 @@ int countFilesInsideDir(const char *path)
 		if (name != "." && name != "..")
 			i++;
 	}
+	closedir(dir);
 	return (i);
 }
 
