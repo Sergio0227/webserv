@@ -43,53 +43,132 @@ void Brain::handleConnections()
 			for (int i = 0; i <= _max_fd; ++i)
 			{
 				if (FD_ISSET(i, &recv_fd_set_cpy) && ((j = isServerFd(i)) != INT_MAX))
-				{
-					int client_fd = _servers[j]->acceptConnections();
-					if (client_fd < 0)
-						continue;
-					setNonBlockingFD(client_fd);
-					addFdToSet(client_fd, _recv_fd_set);
-					_client_start_time[client_fd] = std::time(NULL);
-					_client_to_serv_map[client_fd] = _servers[j];
-				}
-				else if (FD_ISSET(i, &recv_fd_set_cpy))
-				{
-					HttpServer* server = _client_to_serv_map[i];
-					HttpResponse res = server->handleRequest(i);
-					if (res.getError() == 2)
-					{
-						closeClientConnection(i, 2);
-						continue;
-					}
-					_pending_responses.insert(std::make_pair(i, res));
-					addFdToSet(i, _send_fd_set);
-					removeFdFromSet(i, _recv_fd_set);
-				}
-				else if (FD_ISSET(i, &send_fd_set_cpy))
-				{
-					std::map<int, HttpResponse>::iterator it = _pending_responses.find(i);
-					if (it != _pending_responses.end())
-					{
-						HttpResponse &res = it->second;
-						res.sendResponse();
-						_client_start_time[it->first] = std::time(NULL);
-						if (res.getError())
-						{
-							closeClientConnection(i, 0);
-							continue;
-						}
-						_pending_responses.erase(i);
-						addFdToSet(i, _recv_fd_set);
-						removeFdFromSet(i, _send_fd_set);
-					}
-					else
-						throw std::runtime_error("[ERROR] FD not found in Pending Responses.");
-				}
+					acceptAndSetupClient(j);
+				else if (FD_ISSET(i, &recv_fd_set_cpy) && !_cgi_read_fd_to_client.count(i))
+					handleClientRequest(i);
+				else if (FD_ISSET(i, &send_fd_set_cpy) && !_cgi_write_fd_to_client.count(i))
+					handleHttpResponseSend(i);
+				else if (FD_ISSET(i, &send_fd_set_cpy) && _cgi_write_fd_to_client.count(i))
+					handleCgiWrite(i);
+				else if (FD_ISSET(i, &recv_fd_set_cpy) && _cgi_read_fd_to_client.count(i))
+					handleCgiRead(i);
 			}
 		}
 		int fd = timeOutHandler();
 		if (fd > 0)
 			closeClientConnection(fd, 1);
+	}
+}
+
+void Brain::handleHttpResponseSend(int client_fd)
+{
+	std::map<int, HttpResponse>::iterator it = _pending_responses.find(client_fd);
+
+	if (it != _pending_responses.end())
+	{
+		HttpResponse &res = it->second;
+		res.sendResponse();
+		_client_start_time[it->first] = std::time(NULL);
+		if (res.getError())
+		{
+			closeClientConnection(client_fd, 0);
+			return;
+		}
+		_pending_responses.erase(client_fd);
+		addFdToSet(client_fd, _recv_fd_set);
+		removeFdFromSet(client_fd, _send_fd_set);
+	}
+	else
+		throw std::runtime_error("[ERROR] FD not found in Pending Responses.");
+}
+
+void Brain::handleClientRequest(int client_fd)
+{
+	HttpServer* server = _client_to_serv_map[client_fd];
+	HttpResponse res = server->handleRequest(client_fd);
+	ClientInfo &info = server->getClientInfoElem(client_fd);
+
+	if (res.getError() == 2)
+	{
+		closeClientConnection(client_fd, 2);
+		return;
+	}
+	if (info.run_cgi == true)
+		handleCGI(client_fd, info, res);
+	else
+		addFdToSet(client_fd, _send_fd_set);
+	_pending_responses.insert(std::make_pair(client_fd, res));
+	removeFdFromSet(client_fd, _recv_fd_set);
+}
+
+void	Brain::acceptAndSetupClient(int server_fd)
+{
+	int client_fd = _servers[server_fd]->acceptConnections();
+	if (client_fd < 0)
+		return;
+	setNonBlockingFD(client_fd);
+	addFdToSet(client_fd, _recv_fd_set);
+	_client_start_time[client_fd] = std::time(NULL);
+	_client_to_serv_map[client_fd] = _servers[server_fd];
+}
+
+void	Brain::handleCgiWrite(int cgi_stdin_fd)
+{
+	int client_fd = _cgi_write_fd_to_client[cgi_stdin_fd];
+	CGI &cgi = _client_cgi[client_fd];
+	HttpServer* server = _client_to_serv_map[client_fd];
+	ClientInfo &info = server->getClientInfoElem(client_fd);
+
+	cgi.writePostBody(info);
+	removeFdFromSet(cgi_stdin_fd, _send_fd_set);
+	_cgi_write_fd_to_client.erase(cgi_stdin_fd);
+}
+
+void	Brain::handleCgiRead(int cgi_stdout_fd)
+{
+	int client_fd = _cgi_read_fd_to_client[cgi_stdout_fd];
+	CGI &cgi = _client_cgi[client_fd];
+	HttpServer* server = _client_to_serv_map[client_fd];
+	ClientInfo &info = server->getClientInfoElem(client_fd);
+
+	cgi.readCGIOutput();
+	removeFdFromSet(cgi_stdout_fd, _recv_fd_set);
+	_cgi_read_fd_to_client.erase(cgi_stdout_fd);
+	HttpResponse &res = _pending_responses.at(client_fd);
+	res.setStatus(200);
+	res.setContentType("text/plain");
+	res.setBody("Result: " + cgi.getCGIResponse());
+	res.setConnection("keep-alive");
+	logMessage(DEBUG, server->getSocket(), "", &info, 1);
+	addFdToSet(client_fd, _send_fd_set);
+}
+
+void	Brain::handleCGI(int fd, ClientInfo &info, HttpResponse &res)
+{
+	int	has_read_data, has_write_data;
+	HttpServer* server = _client_to_serv_map[fd];
+	CGI	cgi;
+
+	cgi.initCGI(info);
+	if (!cgi.runCGI(&has_write_data, &has_read_data))
+	{
+		addFdToSet(fd, _send_fd_set);
+		res.setStatus(500);
+		res.setError(1);
+		server->buildErrorResponse(info, res);
+		return;
+	}
+	_client_cgi[fd] = cgi;
+	if (has_write_data)
+	{
+		addFdToSet(cgi.getWriteFd(), _send_fd_set);
+		_cgi_write_fd_to_client[cgi.getWriteFd()] = fd;
+		
+	}	
+	if (has_read_data)
+	{
+		addFdToSet(cgi.getReadFd(), _recv_fd_set);
+		_cgi_read_fd_to_client[cgi.getReadFd()] = fd;
 	}
 }
 

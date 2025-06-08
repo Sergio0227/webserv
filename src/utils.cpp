@@ -100,33 +100,39 @@ void	logMessage(LogType level, int server_fd, const std::string& message, Client
 
 std::pair<std::string, std::string>	getPairLog(LogType level)
 {
-	std::map<LogType, std::pair<std::string, std::string> >	log_map;
+	static std::map<LogType, std::pair<std::string, std::string> >	log_map;
 
-	log_map[INFO] = std::make_pair("[INFO]", BLUE);
-	log_map[DEBUG] = std::make_pair("[DEBUG]", ORANGE);
-	log_map[ERROR] = std::make_pair("[ERROR]", RED);
-	log_map[SUCCESS] = std::make_pair("[SUCCESS]", GREEN);
+	if (log_map.empty())
+	{
+		log_map[INFO] = std::make_pair("[INFO]", BLUE);
+		log_map[DEBUG] = std::make_pair("[DEBUG]", ORANGE);
+		log_map[ERROR] = std::make_pair("[ERROR]", RED);
+		log_map[SUCCESS] = std::make_pair("[SUCCESS]", GREEN);
+	}
 	return (log_map[level]);
 }
 
 std::string getStatusMessage(int code)
 {
-	std::map<int, std::string>	status_map;
+	static std::map<int, std::string>	status_map;
 
-	status_map[200] = "OK";
-	status_map[201] = "Created";
-	status_map[204] = "No Content";
-	status_map[303] = "See Other";
-	status_map[400] = "Bad Request";
-	status_map[401] = "Unauthorized";
-	status_map[404] = "Not Found";
-	status_map[405] = "Method Not Allowed";
-	status_map[408] = "Request Timeout";
-	status_map[409] = "Conflict";
-	status_map[413] = "Payload Too Large";
-	status_map[415] = "Unsupported Media Type";
-	status_map[500] = "Internal Server Error";
-	status_map[505] = "HTTP Version Not Supported";
+	if (status_map.empty())
+	{
+		status_map[200] = "OK";
+		status_map[201] = "Created";
+		status_map[204] = "No Content";
+		status_map[303] = "See Other";
+		status_map[400] = "Bad Request";
+		status_map[401] = "Unauthorized";
+		status_map[404] = "Not Found";
+		status_map[405] = "Method Not Allowed";
+		status_map[408] = "Request Timeout";
+		status_map[409] = "Conflict";
+		status_map[413] = "Payload Too Large";
+		status_map[415] = "Unsupported Media Type";
+		status_map[500] = "Internal Server Error";
+		status_map[505] = "HTTP Version Not Supported";
+	}
     if (status_map.find(code) != status_map.end())
 		return (status_map[code]);
 	else
@@ -135,14 +141,17 @@ std::string getStatusMessage(int code)
 
 std::string	getMimeType(const std::string &ext)
 {
-	std::map<std::string, std::string>	mime_map;
+	static std::map<std::string, std::string>	mime_map;
 
-	mime_map[".html"] = "text/html";
-	mime_map[".css"] = "text/css";
-	mime_map[".png"] = "image/png";
-	mime_map[".jpg"] = "image/jpeg";
-	mime_map[".jpeg"] = "image/jpeg";
-	mime_map[".ico"] = "image/x-icon";
+	if (mime_map.empty())
+	{
+		mime_map[".html"] = "text/html";
+		mime_map[".css"] = "text/css";
+		mime_map[".png"] = "image/png";
+		mime_map[".jpg"] = "image/jpeg";
+		mime_map[".jpeg"] = "image/jpeg";
+		mime_map[".ico"] = "image/x-icon";
+	}
     if (mime_map.find(ext) != mime_map.end())
 		return (mime_map[ext]);
 	else

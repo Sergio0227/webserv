@@ -16,7 +16,6 @@ class HttpServer : public Socket
 		void		readRequest(ClientInfo &info, HttpResponse &res);
 		void		parseRequestLine(ClientInfo &info, HttpResponse &res);
         void		parseRequestBody(ClientInfo &info, HttpResponse &res);
-        void		sendErrorResponse(ClientInfo &info, HttpResponse &res);
         void		executeResponse(ClientInfo &info, HttpResponse &res);
         void		runCGI(ClientInfo &info, HttpResponse &res);
 		std::string	extractBody(ClientInfo &info);
@@ -38,4 +37,5 @@ class HttpServer : public Socket
 		ClientInfo		&getClientInfoElem(int fd);
 		void			eraseClientFromMap(int fd);
 		std::string		getFallBackBody(int err);
+		void			buildErrorResponse(ClientInfo &info, HttpResponse &res);
 };

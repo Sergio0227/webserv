@@ -12,10 +12,7 @@ Config::Config()
 }
 
 Config::~Config()
-{
-	for (std::map<std::string, Location*>::iterator it = _locations.begin(); it != _locations.end(); ++it)
-		delete it->second;
-}
+{}
 
 Config::ConfigException::ConfigException(const std::string& msg) : std::runtime_error(msg)
 {}
@@ -106,7 +103,7 @@ void	Config::setAutoindex(std::string& autoindex)
 void	Config::setLocation(std::string& location_name, Location& location)
 {
 
-	this->_locations[location_name] = new Location(location);
+	this->_locations[location_name] = location;
 }
 
 
@@ -153,12 +150,12 @@ struct sockaddr_in	Config::getServerAddress() const
 
 Location*	Config::getLocation(std::string& location_name)
 {
-    std::map<std::string, Location*>::iterator	it = this->_locations.find(location_name);
+	std::map<std::string, Location>::iterator	it = this->_locations.find(location_name);
 
-    if (it != this->_locations.end())
-        return (it->second);
-    else
-        return (NULL);
+	if (it != this->_locations.end())
+		return &(it->second);
+	else
+		return (NULL);
 }
 
 void Config::setErrorPages(std::string& error_pages)
@@ -166,7 +163,7 @@ void Config::setErrorPages(std::string& error_pages)
 	validParamtr(error_pages);
 	std::istringstream	iss(error_pages);
 	std::ostringstream	oss;
-    std::string			num_str, path, extra;
+	std::string			num_str, path, extra;
 
 	if (!(iss >> num_str >> path))
 		throw ConfigException("Invalid Error Page Config: Expects a 'num str' format");
@@ -193,14 +190,14 @@ std::string Config::getErrorPage(short num)
 
 void Config::validParamtr(std::string& paramtr)
 {
-    size_t	pos;
+	size_t	pos;
 
-    pos = paramtr.find(';');
-    if (pos != paramtr.size() - 1)
-    {
-        if (pos > paramtr.size() - pos -1 && pos < paramtr.size() - 1)
-            throw ConfigException("unexpected end of input near \"" + paramtr + "\"");
-        throw ConfigException("semi-colon missing near \"" + paramtr + "\"");
-    }
-    paramtr = trim(paramtr.substr(0, pos));
+	pos = paramtr.find(';');
+	if (pos != paramtr.size() - 1)
+	{
+		if (pos > paramtr.size() - pos -1 && pos < paramtr.size() - 1)
+			throw ConfigException("unexpected end of input near \"" + paramtr + "\"");
+		throw ConfigException("semi-colon missing near \"" + paramtr + "\"");
+	}
+	paramtr = trim(paramtr.substr(0, pos));
 }

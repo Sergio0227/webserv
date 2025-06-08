@@ -57,13 +57,13 @@ HttpResponse	HttpServer::handleRequest(int client_fd)
 	if (!info.close_connection && !info.run_cgi)
 		executeResponse(info, res);
 	else if (!info.close_connection && info.run_cgi)
-		runCGI(info, res);
+		return (res);
 	if (info.close_connection)
 	{
 		if (_debug)
 			logMessage(DEBUG, _socket_fd,"Failed ", &info, 1);
 		res.setError(1);
-		sendErrorResponse(info, res);
+		buildErrorResponse(info, res);
 	}
 	else
 		res.setError(0);
@@ -200,11 +200,8 @@ void	HttpServer::parseRequestBody(ClientInfo& info, HttpResponse &res)
 		res.setStatus(415), info.close_connection = true;
 }
 
-void HttpServer::sendErrorResponse(ClientInfo &info, HttpResponse &res)
+void HttpServer::buildErrorResponse(ClientInfo &info, HttpResponse &res)
 {
-	if (!info.close_connection)
-		return ;
-
 	std::string	path;
 	std::string	test_page = _conf->getErrorPage(info.status_code);
 	std::string	body;
@@ -416,8 +413,15 @@ int		HttpServer::checkPath(ClientInfo &info, std::string &path, std::string &met
 			full_path = loc->getRoot();
 		else
 			full_path = _conf->getRoot();
+		
+		if (loc->hasAutoindex())
+			autoindex_enabled = loc->getAutoindex();
+		else
+			autoindex_enabled = _conf->getAutoindex();
+		if (!loc->getIndex().empty())
+				autoindex_enabled = false;
 		is_dir = isDirectory(full_path);
-		if (is_dir)
+		if (is_dir && !autoindex_enabled)
 		{
 			if (full_path[full_path.size() - 1] != '/')
 				full_path += "/";
@@ -426,12 +430,8 @@ int		HttpServer::checkPath(ClientInfo &info, std::string &path, std::string &met
 			else
 				full_path += _conf->getIndex();
 		}
-		if (loc->hasAutoindex())
-			autoindex_enabled = loc->getAutoindex();
-		else
-			autoindex_enabled = _conf->getAutoindex();
-		if (!loc->getIndex().empty())
-				autoindex_enabled = false;
+		
+		
 		if (!loc->isMethodAllowed(method))
 			return (ERROR_METHOD_405);
 	}
@@ -452,7 +452,7 @@ int		HttpServer::checkPath(ClientInfo &info, std::string &path, std::string &met
 	if (!access(full_path.c_str(), F_OK))
 	{
 		//check for cgi script
-		if (loc && path.find("/cgi-bin") != std::string::npos)
+		if (loc && full_path.find(".py") != std::string::npos)
 		{
 			info.info.absolute_path = full_path;
 			info.run_cgi = true;
@@ -580,22 +580,22 @@ std::string	HttpServer::constructBodyForDirList(ClientInfo &info)
 	return (body);
 }
 
-void	HttpServer::runCGI(ClientInfo &info, HttpResponse &res)
-{
-	CGI	cgi(info);
+// void	HttpServer::runCGI(ClientInfo &info, HttpResponse &res)
+// {
+// 	CGI	cgi(info);
 
-	if (!info.close_connection)
-	{
-		res.setStatus(200);
-		res.setContentType("text/plain");
-		res.setBody("Result: " + cgi.getCGIResponse());
-		res.setConnection("keep-alive");
-		if (_debug)
-			logMessage(DEBUG, _socket_fd, "", &info, 1);
-	}
-	else
-		res.setStatus(500);
-}
+// 	if (!info.close_connection)
+// 	{
+// 		res.setStatus(200);
+// 		res.setContentType("text/plain");
+// 		res.setBody("Result: " + cgi.getCGIResponse());
+// 		res.setConnection("keep-alive");
+// 		if (_debug)
+// 			logMessage(DEBUG, _socket_fd, "", &info, 1);
+// 	}
+// 	else
+// 		res.setStatus(500);
+// }
 
 void	HttpServer::eraseClientFromMap(int fd)
 {

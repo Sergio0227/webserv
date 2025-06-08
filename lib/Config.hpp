@@ -13,7 +13,7 @@ class Config
 		struct sockaddr_in 					_server_address;
 		unsigned long						_client_max_body_size;
 		std::map<short, std::string>		_error_pages;
-		std::map<std::string, Location*>	_locations;
+		std::map<std::string, Location>	_locations;
 		bool								_autoindex;
 
 	public:
