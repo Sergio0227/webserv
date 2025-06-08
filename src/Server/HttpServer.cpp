@@ -452,7 +452,7 @@ int		HttpServer::checkPath(ClientInfo &info, std::string &path, std::string &met
 	if (!access(full_path.c_str(), F_OK))
 	{
 		//check for cgi script
-		if (loc && full_path.find(".py") != std::string::npos)
+		if (full_path.find(".py") != std::string::npos)
 		{
 			info.info.absolute_path = full_path;
 			info.run_cgi = true;

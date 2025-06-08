@@ -24,17 +24,18 @@
 #include <fcntl.h>
 
 #define ENABLE_DEBUG true
+#define TIMEOUT_SEC 25
+#define BACKLOG 5
+//1mb maxbody if maxbody doesnt exist in config
+#define MAX_CONTENT_LENGTH 1000000
 
 #define BLUE "\033[34m"
 #define GREEN "\033[32m"
 #define RED "\033[31m"
 #define ORANGE "\033[38;5;214m"
 #define RESET "\033[0m"
-#define BACKLOG 5
-#define MAX_CONTENT_LENGTH 1000000 //1mb maxbody if maxbody doesnt exist in config
 #define ERROR_PATH_404 404
 #define ERROR_METHOD_405 405
-#define TIMEOUT_SEC 10
 
 /*
 ---Function Prototypes in Header----
