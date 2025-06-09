@@ -311,3 +311,19 @@ void	setNonBlockingFD(int fd)
 	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
 		throw std::runtime_error("fcntl F_SETFL failed");
 }
+
+std::string proper_path_cat(const std::string &path_a, const std::string &path_b)
+{
+	std::string		str(path_a);
+	bool			a_ends_with_slash = (path_a[path_a.size() - 1] == '/');
+	bool			b_starts_with_slash = (path_b[0] == '/');
+
+	if (a_ends_with_slash && b_starts_with_slash)
+		str += path_b.substr(1);
+	else if (!a_ends_with_slash && !b_starts_with_slash)
+		str += '/' + path_b;
+	else
+		str += path_b;
+	return (str);
+}
+

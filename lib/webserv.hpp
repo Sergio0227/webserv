@@ -118,6 +118,7 @@ bool								safeExtract(std::string &input, char delim, std::string &out);
 bool								isDirectory(const std::string &path);
 bool								isRegularFile(const std::string &path);
 bool								hasReadAccess(const std::string &path);
+std::string							proper_path_cat(const std::string &path_a, const std::string &path_b);
 std::string							getStringMethod(Methods method);
 std::string							getCurrentTime();
 std::string							getStatusMessage(int code);

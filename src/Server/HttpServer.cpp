@@ -423,32 +423,25 @@ int		HttpServer::checkPath(ClientInfo &info, std::string &path, std::string &met
 		is_dir = isDirectory(full_path);
 		if (is_dir && !autoindex_enabled)
 		{
-			if (full_path[full_path.size() - 1] != '/')
-				full_path += "/";
 			if (!loc->getIndex().empty())
-				full_path += loc->getIndex();
+				full_path = proper_path_cat(full_path, loc->getIndex());
 			else
-				full_path += _conf->getIndex();
+				full_path = proper_path_cat(full_path, _conf->getIndex());
 		}
-		
-		
 		if (!loc->isMethodAllowed(method))
 			return (ERROR_METHOD_405);
 	}
 	else
 	{
-		full_path = _conf->getRoot() + path;
+		full_path = proper_path_cat(_conf->getRoot(), path);
 		is_dir = isDirectory(full_path);
 		if (is_dir)
-		{
-			if (full_path[full_path.size() - 1] != '/')
-				full_path += "/";
-			full_path += _conf->getIndex();
-		}
+			full_path = proper_path_cat(full_path, _conf->getIndex());
 		autoindex_enabled = _conf->getAutoindex();
 		if (!_conf->getIndex().empty())
 				autoindex_enabled = false;
 	}
+	std::cout << full_path << std::endl;
 	if (!access(full_path.c_str(), F_OK))
 	{
 		//check for cgi script
