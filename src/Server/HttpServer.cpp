@@ -273,6 +273,16 @@ size_t	HttpServer::parseRequestHeader(ClientInfo& info, HttpResponse &res)
 //Depending on the method, the server sends a response back
 void	HttpServer::executeResponse(ClientInfo &info, HttpResponse &res)
 {
+	if (!info.redirect_location.empty())
+	{
+		res.setStatus(info.status_code);
+		res.setLocation(info.redirect_location);
+		res.setConnection("keep-alive");
+		if (_debug)
+			logMessage(DEBUG, _socket_fd, "", &info, 1);
+		return;
+
+	}
 	switch (info.info.method)
 	{
 		case GET:
@@ -398,13 +408,8 @@ int		HttpServer::checkPath(ClientInfo &info, std::string &path, std::string &met
 	if (loc && !loc->getReturnValue().empty())
 	{
 		std::istringstream iss(loc->getReturnValue());
-		std::string test_path;
-		iss >> info.status_code >> test_path;
-		Location *test_loc = _conf->getLocation(test_path);
-		if (test_loc)
-			loc = test_loc;
-		else
-			flag = true;
+		iss >> info.status_code >> info.redirect_location;
+		return true;
 	}
 	//handle location
 	if (loc && !flag)
@@ -441,7 +446,6 @@ int		HttpServer::checkPath(ClientInfo &info, std::string &path, std::string &met
 		if (!_conf->getIndex().empty())
 				autoindex_enabled = false;
 	}
-	std::cout << full_path << std::endl;
 	if (!access(full_path.c_str(), F_OK))
 	{
 		//check for cgi script

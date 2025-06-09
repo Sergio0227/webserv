@@ -24,6 +24,7 @@ void	ClientInfo::reset()
 {
 	status_code = 0;
 	status_msg.clear();
+	redirect_location.clear();
 	close_connection = false;
 	dir_listening = false;
 	run_cgi = false;

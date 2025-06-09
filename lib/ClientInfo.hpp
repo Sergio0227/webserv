@@ -49,6 +49,7 @@ struct	ClientInfo
 	bool		close_connection;
 	bool		file_uploaded;
 	std::string	status_msg;
+	std::string	redirect_location;
 	sockaddr_in	addr;
 	time_t		connection_time;
 	RequestInfo	info;
