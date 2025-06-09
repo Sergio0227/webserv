@@ -11,6 +11,7 @@ class Brain
 		int										_nb_servers;
 		int										_max_fd;
 		bool									_debug;
+		bool									_config_error;
 		std::vector<std::vector<std::string> >	_config_files;
 		std::vector<Config*>					_server_conf;
 		std::vector<std::string>				_locations_keys;
@@ -43,6 +44,7 @@ class Brain
 	public:
 		Brain(bool debug);
 		~Brain();
+		void	setError(bool err);
 		int		getNbServers();
 		void	handleConnections();
 		void	splitServers(std::vector<std::string>);

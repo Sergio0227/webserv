@@ -31,8 +31,17 @@ int		main(int argc, char *argv[])
 		std::vector<std::string>	configFile;
 		configFile = storeFormatedFile(config_file_path);
 		Brain brain(ENABLE_DEBUG);
-		brain.splitServers(configFile);
-		brain.initServerConfigs();
+		try
+		{
+			brain.splitServers(configFile);
+			brain.initServerConfigs();
+		}
+		catch (std::exception &e)
+		{
+			brain.setError(true);
+			std::cerr << e.what() << std::endl;
+			return (EXIT_FAILURE);
+		}
 		brain.setupServers();
 		brain.handleConnections();
 	}

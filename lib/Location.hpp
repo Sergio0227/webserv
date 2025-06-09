@@ -25,13 +25,13 @@ class Location
 		~Location();
 
 		// Setters
-		void		setAlias(std::string& alias, int server_index);
-		void		setRoot(std::string& root, int server_index);
-		void		setClientMaxBodySize(std::string& client_max_body_size, int server_index);
-		void		setReturnValue(std::string& return_value, int server_index);
-		void		setIndex(std::string& index, int server_index);
-		void		setAutoindex(std::string& autoindex, int server_index);
-		void		setAllowedMethods(std::string& allowed_methods, int server_index);
+		void		setAlias(std::string& alias, char server_index_index);
+		void		setRoot(std::string& root, char server_index_index);
+		void		setClientMaxBodySize(std::string& client_max_body_size, char server_index_index);
+		void		setReturnValue(std::string& return_value, char server_index_index);
+		void		setIndex(std::string& index, char server_index_index);
+		void		setAutoindex(std::string& autoindex, char server_index_index);
+		void		setAllowedMethods(std::string& allowed_methods, char server_index_index);
 		void		setErrorPages(std::map<short, std::string> &error_pages);
 		std::string getPath() const;
 

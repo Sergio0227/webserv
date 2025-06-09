@@ -5,6 +5,7 @@ Brain::Brain(bool debug) : _debug(debug)
 {
 	_nb_servers = 0;
     _max_fd = 0;
+	_config_error = false;
 	_server_conf.resize(0);
 	_config_files.resize(0);
 	FD_ZERO(&_recv_fd_set);
@@ -218,7 +219,8 @@ Brain::~Brain()
 			removeFdFromSet(i, _send_fd_set);
 		}
 	}
-	logMessage(SUCCESS, -1 , "Server(s) have been successfully shut down. All connections closed.", NULL, 0);
+	if (!_config_error)
+		logMessage(SUCCESS, -1 , "Server(s) have been successfully shut down. All connections closed.", NULL, 0);
 	for (size_t i = 0; i < _servers.size(); i++)
 		delete _servers[i];
 }
@@ -444,5 +446,10 @@ void Brain::debugPrintState() const
 	std::cout << "\nNumber of servers: " << _nb_servers << std::endl;
 	std::cout << "Highest FD value (_max_fd): " << _max_fd << std::endl;
 	std::cout << "----------------------------------------" << std::endl;
+}
+
+void Brain::setError(bool err)
+{
+	_config_error = err;
 }
 
