@@ -329,19 +329,19 @@ void Brain::parseLocation(size_t *i, int server_index, std::string location_name
 			if (j > param.size())
 				throw Config::ConfigException("Error: Wrong parameter near: " + param);
 		if (param == "allow_methods")
-			ref_loc.setAllowedMethods(value);
+			ref_loc.setAllowedMethods(value, server_index);
 		else if (param == "root")
-			ref_loc.setRoot(value);
+			ref_loc.setRoot(value, server_index);
 		else if (param == "index")
-			ref_loc.setIndex(value);
+			ref_loc.setIndex(value, server_index);
 		else if (param == "autoindex")
 			ref_loc.setAutoindex(value, server_index);
 		else if (param == "alias")
-			ref_loc.setAlias(value);
+			ref_loc.setAlias(value, server_index);
 		else if (param == "return")
-			ref_loc.setReturnValue(value);
+			ref_loc.setReturnValue(value, server_index);
 		else if (param == "client_max_body_size")
-			ref_loc.setClientMaxBodySize(value);
+			ref_loc.setClientMaxBodySize(value, server_index);
 	}
 	this->_server_conf[server_index]->setLocation(location_name, ref_loc);
 }
