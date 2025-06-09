@@ -281,81 +281,25 @@ void	HttpServer::executeResponse(ClientInfo &info, HttpResponse &res)
 		if (_debug)
 			logMessage(DEBUG, _socket_fd, "", &info, 1);
 		return;
-
 	}
 	switch (info.info.method)
 	{
 		case GET:
 		{
-			res.setStatus(200);
-			if (info.dir_listening)
-			{
-				res.setContentType("text/html");
-				res.setBody(constructBodyForDirList(info));
-			}
-			else
-			{
-				std::string	body = parseFileToString(info.info.absolute_path.c_str());
-				if (body == "")
-				{
-					res.setStatus(404), info.close_connection = true;
-					return ;
-				}
-				res.setContentType(retrieveContentType(info));
-				res.setBody(body);
-			}
+			if (!handleGet(info, res))
+				return ;
 			break;	
 		}
 		case POST:
 		{
-			res.setStatus(303);
-			if (info.info.path == "/register")
-			{
-				if (emailExists(info))
-				{
-					res.setStatus(409), info.close_connection = true;
-					return ;
-				}
-				res.setLocation("/login.html");
-				storeCredential(info.info.body, "var/www/data/users.csv");
-			}
-			else if (info.info.path == "/login")
-			{
-				if (!emailExists(info) || !passwordCorrect(info.info.body))
-				{
-					res.setStatus(401), info.close_connection = true;
-					return ;
-				}
-				res.setLocation("/user.html");
-			}
-			else if (info.info.path == "/upload" && info.file_uploaded == true)
-			{
-				if (uploadFile(info, "var/www/data/images/"))
-				{
-					res.setStatus(500), info.close_connection = true;
-					return ;
-				}
-				res.setStatus(201);
-			}
+			if (!handlePost(info, res))
+				return ;
 			break;
 		}
 		case DELETE:
 		{
-			if (info.info.path.find("/delete_email") == std::string::npos)
-			{
-				res.setStatus(404), info.close_connection = true;
+			if (!handleDelete(info, res))
 				return ;
-			}
-			if (deleteEmail(info, "var/www/data/users.csv") == false)
-			{
-				res.setStatus(400);
-				res.setBody("Invalid email");
-				res.setContentType("text/plain");
-				return;
-			}
-			res.setStatus(200);
-			res.setBody("Account successfully deleted");
-			res.setContentType("text/plain");
 			break;
 		}
 		default:
@@ -364,11 +308,86 @@ void	HttpServer::executeResponse(ClientInfo &info, HttpResponse &res)
 			info.close_connection = true;
 			break;
 		}
-		
 	}
 	res.setConnection("keep-alive");
 	if (_debug)
 		logMessage(DEBUG, _socket_fd, "", &info, 1);
+}
+
+bool HttpServer::handleDelete(ClientInfo &info, HttpResponse &res)
+{
+	if (info.info.path.find("/delete_email") == std::string::npos)
+	{
+		res.setStatus(404), info.close_connection = true;
+		return (false);
+	}
+	if (deleteEmail(info, "var/www/data/users.csv") == false)
+	{
+		res.setStatus(400);
+		res.setBody("Invalid email");
+		res.setContentType("text/plain");
+		return (false);
+	}
+	res.setStatus(200);
+	res.setBody("Account successfully deleted");
+	res.setContentType("text/plain");
+	return (true);
+}
+
+bool HttpServer::handleGet(ClientInfo &info, HttpResponse &res)
+{
+	res.setStatus(200);
+	if (info.dir_listening)
+	{
+		res.setContentType("text/html");
+		res.setBody(constructBodyForDirList(info));
+	}
+	else
+	{
+		std::string	body = parseFileToString(info.info.absolute_path.c_str());
+		if (body == "")
+		{
+			res.setStatus(404), info.close_connection = true;
+			return (false);
+		}
+		res.setContentType(retrieveContentType(info));
+		res.setBody(body);
+	}
+	return (true);
+}
+
+bool HttpServer::handlePost(ClientInfo &info, HttpResponse &res)
+{
+	res.setStatus(303);
+	if (info.info.path == "/register")
+	{
+		if (emailExists(info))
+		{
+			res.setStatus(409), info.close_connection = true;
+			return (false);
+		}
+		res.setLocation("/login.html");
+		storeCredential(info.info.body, "var/www/data/users.csv");
+	}
+	else if (info.info.path == "/login")
+	{
+		if (!emailExists(info) || !passwordCorrect(info.info.body))
+		{
+			res.setStatus(401), info.close_connection = true;
+			return (false);
+		}
+		res.setLocation("/user.html");
+	}
+	else if (info.info.path == "/upload" && info.file_uploaded == true)
+	{
+		if (uploadFile(info, "var/www/data/images/"))
+		{
+			res.setStatus(500), info.close_connection = true;
+			return (false);
+		}
+		res.setStatus(201);
+	}
+	return (true);
 }
 
 //reads a file, parses it into a string and returns it
@@ -393,7 +412,6 @@ std::string	HttpServer::parseFileToString(const char *filename)
 int		HttpServer::checkPath(ClientInfo &info, std::string &path, std::string &method)
 {
 	std::string	full_path;
-	bool		flag = false;
 	bool		autoindex_enabled = false;
 	bool		is_dir = false;
 
@@ -409,10 +427,10 @@ int		HttpServer::checkPath(ClientInfo &info, std::string &path, std::string &met
 	{
 		std::istringstream iss(loc->getReturnValue());
 		iss >> info.status_code >> info.redirect_location;
-		return true;
+		return (true);
 	}
 	//handle location
-	if (loc && !flag)
+	if (loc)
 	{
 		if (!loc->getRoot().empty())
 			full_path = loc->getRoot();
@@ -446,6 +464,8 @@ int		HttpServer::checkPath(ClientInfo &info, std::string &path, std::string &met
 		if (!_conf->getIndex().empty())
 				autoindex_enabled = false;
 	}
+	if (loc && (method == "POST" || method == "DELETE"))
+		return (true);
 	if (!access(full_path.c_str(), F_OK))
 	{
 		//check for cgi script

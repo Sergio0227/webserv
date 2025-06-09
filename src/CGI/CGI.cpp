@@ -6,8 +6,7 @@ CGI::CGI()
 }
 
 CGI::~CGI()
-{
-}
+{}
 
 std::string CGI::getCGIResponse()
 {
@@ -74,18 +73,9 @@ bool	CGI::runCGI(int *has_send_data, int *has_read_data)
 		_read_fd = _out_pipe[0];
 		setNonBlockingFD(_write_fd);
 		setNonBlockingFD(_read_fd);
-
 		if (_method == POST) *has_send_data = true;
 		else *has_send_data = false;
 		*has_read_data = true;
-
-		// if (_info.info.method == POST)
-		// 	write(_in_pipe[1], _info.info.body.body_str.c_str(), _info.info.body.body_str.size());
-		// close(_in_pipe[1]);
-		// while ((bytes = read(_out_pipe[0], buffer, sizeof(buffer))) > 0)
-		// 	_response.append(buffer, bytes);
-		// close(_out_pipe[0]);
-		// waitpid(_pid, &status, 0);
 	}
 	return true;
 }

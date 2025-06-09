@@ -15,16 +15,19 @@ class HttpServer : public Socket
 		HttpServer();
 		void		readRequest(ClientInfo &info, HttpResponse &res);
 		void		parseRequestLine(ClientInfo &info, HttpResponse &res);
-        void		parseRequestBody(ClientInfo &info, HttpResponse &res);
-        void		executeResponse(ClientInfo &info, HttpResponse &res);
+		void		parseRequestBody(ClientInfo &info, HttpResponse &res);
+		void		executeResponse(ClientInfo &info, HttpResponse &res);
         void		runCGI(ClientInfo &info, HttpResponse &res);
-		std::string	extractBody(ClientInfo &info);
+        std::string	extractBody(ClientInfo &info);
 		std::string	readRequestPOST(ClientInfo &info);
 		std::string	parseFileToString(const char *filename);
 		int			uploadFile(ClientInfo &info, const char *path);
 		int			checkPath(ClientInfo &info, std::string &path, std::string &method);
 		bool		deleteEmail(ClientInfo &info, const char *filePath);
 		bool		checkBodySize(ClientInfo &info);
+		bool		handleGet(ClientInfo &info, HttpResponse &res);
+		bool		handlePost(ClientInfo &info, HttpResponse &res);
+		bool		handleDelete(ClientInfo &info, HttpResponse &res);
 		std::string	constructBodyForDirList(ClientInfo &info);
 		size_t		parseRequestHeader(ClientInfo &info, HttpResponse &res);
 

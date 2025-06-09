@@ -28,14 +28,14 @@ class Brain
 		
 		void	parseConfigFile(int server_index);
 		void	parseLocation(size_t *i, int server_index, std::string location_name);
-        void	handleHttpResponseSend(int client_fd);
-        void	handleClientRequest(int client_fd);
-        void	acceptAndSetupClient(int server_fd);
-        void	handleCgiWrite(int cgi_stdin_fd);
-        void	handleCgiRead(int fd);
-        void	handleCGI(int fd, ClientInfo &info, HttpResponse &res);
+		void	handleHttpResponseSend(int client_fd);
+		void	handleClientRequest(int client_fd);
+		void	acceptAndSetupClient(int server_fd);
+		void	handleCgiWrite(int cgi_stdin_fd);
+		void	handleCgiRead(int fd);
+		void	handleCGI(int fd, ClientInfo &info, HttpResponse &res);
 		void	debugPrintState() const;
-        void	closeClientConnection(int fd, int flag);
+		void	closeClientConnection(int fd, int flag);
 		void	addFdToSet(int fd, fd_set &fd_set);
 		void	removeFdFromSet(int fd, fd_set &fd_set);
 		int		isServerFd(int i);
