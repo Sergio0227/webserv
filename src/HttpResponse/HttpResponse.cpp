@@ -10,7 +10,7 @@ HttpResponse::HttpResponse(ClientInfo &info) : _info(info)
 	_err = -1;
 }
 
-HttpResponse& HttpResponse::operator=(const HttpResponse& other)
+HttpResponse&	HttpResponse::operator=(const HttpResponse& other)
 {
 	if (this != &other)
 	{
@@ -23,21 +23,24 @@ HttpResponse& HttpResponse::operator=(const HttpResponse& other)
 	}
 	return *this;
 }
-void HttpResponse::setStatus(int code)
+void	HttpResponse::setStatus(int code)
 {
 	_info.status_code = code;
 	_info.status_msg = getStatusMessage(code);
 }
 
-void HttpResponse::buildResponse()
+void	HttpResponse::buildResponse()
 {
-	std::ostringstream oss;
+	std::ostringstream	oss;
+	std::string			status_code_str;
+	std::string			body_len;
+
 	oss << _info.status_code;
-	std::string status_code_str = oss.str();
+	status_code_str = oss.str();
 	oss.str("");
 	oss.clear();
 	oss << _body.size();
-	std::string body_len = oss.str();
+	body_len = oss.str();
 	_response = "HTTP/1.1 " + status_code_str + " " + getStatusMessage(_info.status_code) + "\r\n";
 	if (!_content_type.empty())
 		_response += "Content-Type: " + _content_type + "\r\n";
@@ -49,22 +52,22 @@ void HttpResponse::buildResponse()
 	_response += _body;
 }
 
-void HttpResponse::setContentType(const std::string &ct)
+void	HttpResponse::setContentType(const std::string &ct)
 {
 	_content_type = ct;
 }
 
-void HttpResponse::setBody(const std::string &body)
+void	HttpResponse::setBody(const std::string &body)
 {
 	_body = body;
 }
 
-void HttpResponse::setLocation(const std::string &loc)
+void	HttpResponse::setLocation(const std::string &loc)
 {
 	_location = loc;
 }
 
-void HttpResponse::sendResponse()
+void	HttpResponse::sendResponse()
 {
 	buildResponse();
 	int bytes_sent = send(_info.fd, _response.c_str(), _response.size(), 0);
@@ -72,22 +75,22 @@ void HttpResponse::sendResponse()
 		throw std::runtime_error("send error");
 }
 
-void HttpResponse::setConnection(const std::string &con)
+void	HttpResponse::setConnection(const std::string &con)
 {
 	_con = con;
 }
 
-void HttpResponse::setError(int err)
+void	HttpResponse::setError(int err)
 {
 	_err = err;
 }
 
-int	HttpResponse::getError()
+int		HttpResponse::getError()
 {
 	return _err;
 }
 
-int HttpResponse::getClientStatus()
+int		HttpResponse::getClientStatus()
 {
 	return _info.status_code;
 }

@@ -1,6 +1,6 @@
 #include "ClientInfo.hpp"
 
-void BodyInfo::reset()
+void	BodyInfo::reset()
 {
 	body_size = 0;
 	body_str.clear();
@@ -8,7 +8,7 @@ void BodyInfo::reset()
 	passw.clear();
 }
 
-void RequestInfo::reset()
+void	RequestInfo::reset()
 {
 	request.clear();
 	http_version.clear();
@@ -20,7 +20,7 @@ void RequestInfo::reset()
 	body.reset();
 }
 
-void ClientInfo::reset()
+void	ClientInfo::reset()
 {
 	status_code = 0;
 	status_msg.clear();

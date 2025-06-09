@@ -1,8 +1,8 @@
 #include "Brain.hpp"
 
-int	g_flag = 1;
+int		g_flag = 1;
 
-void handleShutdown(int signal)
+void	handleShutdown(int signal)
 {
 	(void)signal;
 	std::cout << std::endl;
@@ -10,7 +10,7 @@ void handleShutdown(int signal)
 	g_flag = 0;
 }
 
-int main(int argc, char *argv[])
+int		main(int argc, char *argv[])
 {
 	if (argc > 2)
 	{
@@ -18,14 +18,19 @@ int main(int argc, char *argv[])
 		return (EXIT_FAILURE);
 	}
 	signal(SIGINT, handleShutdown);
-	std::string config_file_path = "configs/default.conf";
+	std::string	config_file_path = "configs/default.conf";
+	if (argc == 1 && access(config_file_path.c_str(), R_OK))
+	{
+		std::cerr << "Error: Missing default configuration file at configs/default.conf" <<std::endl;
+		return (EXIT_FAILURE);
+	}
 	if (argc == 2)
 		config_file_path = argv[1];
 	try
 	{
-		std::vector<std::string> configFile;
+		std::vector<std::string>	configFile;
 		configFile = storeFormatedFile(config_file_path);
-		Brain brain(configFile);
+		Brain brain(configFile, ENABLE_DEBUG);
 	}
 	catch (std::exception &e)
 	{
