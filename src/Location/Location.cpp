@@ -37,41 +37,37 @@ void    Location::setPath(std::string& path)
 	this->_path = path;
 }
 
-void    Location::setAutoindex(std::string& autoindex, int server_index)
+void    Location::setAutoindex(std::string& autoindex, char server_index)
 {
 	static std::string	set = "";
 
-	if (set == this->getPath())
+	if (set == this->getPath() + server_index)
 		throw Config::ConfigException("Duplicate Autoindex declaration, only one allowed per location block");
 	Config::validParamtr(autoindex);
 	if (autoindex != "on" && autoindex != "off")
 		throw Config::ConfigException("Invalid Autoindex, Off or On expected");
 	this->_autoindex = (autoindex == "on");
 	_has_autoindex = true;
-	std::ostringstream oss;
-	oss << server_index;
-	set = this->getPath() + oss.str();
+	set = this->getPath() + server_index;
 }
 
 
-void Location::setIndex(std::string& index, int server_index)
+void Location::setIndex(std::string& index, char server_index)
 {
 	static std::string	set = "";
 
-	if (set == this->getPath())
+	if (set == this->getPath() + server_index)
 		throw Config::ConfigException("Duplicate Index declaration, only one allowed per location block");
 	Config::validParamtr(index);
 	this->_index = index;
-	std::ostringstream oss;
-	oss << server_index;
-	set = this->getPath() + oss.str();
+	set = this->getPath() + server_index;
 }
 
-void Location::setClientMaxBodySize(std::string& client_max_body_size, int server_index)
+void Location::setClientMaxBodySize(std::string& client_max_body_size, char server_index)
 {
 	static std::string	set = "";
 
-	if (set == this->getPath())
+	if (set == this->getPath() + server_index)
 		throw Config::ConfigException("Duplicate ClientMaxBodySize declaration, only one allowed per location block");
 	Config::validParamtr(client_max_body_size);
 	for (size_t i = 0; i < client_max_body_size.size(); ++i)
@@ -79,55 +75,47 @@ void Location::setClientMaxBodySize(std::string& client_max_body_size, int serve
 			throw Config::ConfigException("Body size must contain only numeric values");
 	int int_body_size = std::atoi(client_max_body_size.c_str());
 	this->_client_max_body_size = int_body_size;
-	std::ostringstream oss;
-	oss << server_index;
-	set = this->getPath() + oss.str();
+	set = this->getPath() + server_index;
 }
 
-void Location::setAlias(std::string& alias, int server_index)
+void Location::setAlias(std::string& alias, char server_index)
 {
 	static std::string	set = "";
 
-	if (set == this->getPath())
+	if (set == this->getPath() + server_index)
 		throw Config::ConfigException("Duplicate Alias declaration, only one allowed per location block");
 	Config::validParamtr(alias);
 	this->_alias = alias;
-	std::ostringstream oss;
-	oss << server_index;
-	set = this->getPath() + oss.str();
+	set = this->getPath() + server_index;
 }
 
-void Location::setRoot(std::string& root, int server_index)
+void Location::setRoot(std::string& root, char server_index)
 {
     static std::string	set = "";
 
-    if (set == this->getPath())
+	if (set == this->getPath() + server_index)
         throw Config::ConfigException("Duplicate Root declaration, only one allowed per location block");
     Config::validParamtr(root);
     this->_root = root;
-	std::ostringstream oss;
-	oss << server_index;
-	set = this->getPath() + oss.str();
+	set = this->getPath() + server_index;
 }
 
-void Location::setReturnValue(std::string& return_value, int server_index)
+void Location::setReturnValue(std::string& return_value, char server_index)
 {
     static std::string	set = "";
 
-    if (set == this->getPath())
+	if (set == this->getPath() + server_index)
         throw Config::ConfigException("Duplicate ReturnValue declaration, only one allowed per location block");
     Config::validParamtr(return_value);
     this->_return_value = return_value;
-	std::ostringstream oss;
-	oss << server_index;
-	set = this->getPath() + oss.str();
+	set = this->getPath() + server_index;
 }
 
-void Location::setAllowedMethods(std::string& allowed_methods, int server_index)
+void Location::setAllowedMethods(std::string& allowed_methods, char server_index)
 {
     static std::string	set = "";
 
-	if (set == this->getPath())
+	if (set == this->getPath() + server_index)
 		throw Config::ConfigException("Duplicate AllowedMethods declaration, only one allowed per location block");
 	Config::validParamtr(allowed_methods);
 	size_t j = 0;
@@ -145,9 +133,7 @@ void Location::setAllowedMethods(std::string& allowed_methods, int server_index)
 				throw Config::ConfigException("Invalid AllowedMethods, only GET, POST and DELETE are allowed");
 		}
 	}
-	std::ostringstream oss;
-	oss << server_index;
-	set = this->getPath() + oss.str();
+	set = this->getPath() + server_index;
 }
 
 std::string Location::getPath() const
