@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<title>CGI Tools</title>
+	<link rel="stylesheet" href="/style.css" />
+</head>
+
+<body>
+	<div class="container" style="width: 800px;">
+		<h1>CGI Tools</h1>
+		<section id="calculator">
+			<h2>Simple CGI Calculator</h2>
+			<form action="/cgi-bin" method="get">
+				<label>
+					Number A:
+					<input type="text" name="a" required />
+				</label><br />
+				<label>
+					Operator:
+					<select name="op" required>
+						<option value="+">+</option>
+						<option value="-">−</option>
+						<option value="*">×</option>
+						<option value="/">÷</option>
+					</select>
+				</label><br />
+				<label>
+					Number B:
+					<input type="text" name="b" required />
+				</label><br />
+				<input type="submit" value="Calculate" />
+			</form>
+			<p id="cgi-result"><!-- CGI_RESULT --></p>
+		</section>
+
+		<hr />
+		<section id="character-counter">
+			<h2>Character Counter</h2>
+			<form action="/cgi-bin" method="post">
+				<label for="text">Enter your text below:</label><br />
+				<textarea id="text" name="text" rows="6" cols="50" placeholder="Paste or write text here..."
+					required></textarea><br />
+				<input type="submit" value="Count Chars" />
+			</form>
+		</section>
+		<a href="/"><button type="button">Home</button></a>
+	</div>
+</body>
+
+</html>

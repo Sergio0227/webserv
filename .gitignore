@@ -1,5 +1,4 @@
-.idea/
-.vscode/
-webserv/.vscode/
-cmake-build-debug/
+**/.idea/
+**/.vscode/
+**/cmake-build-debug/
 CMakeLists.txt

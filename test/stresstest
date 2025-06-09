@@ -1,0 +1,13 @@
+#!/bin/bash
+
+PORTS=(8080 8081)
+REQUESTS=50      # total requests per port
+PARALLEL=20      # parallel curls per port
+
+for PORT in "${PORTS[@]}"; do
+	echo "Starting $REQUESTS requests to localhost:$PORT with $PARALLEL parallel curls..."
+
+ 	seq $REQUESTS | xargs -n1 -P$PARALLEL -I{} curl -s -o /dev/null http://localhost:$PORT &
+done
+wait  # wait for all background curls to finish
+echo "All requests completed."
