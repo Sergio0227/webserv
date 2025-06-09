@@ -7,7 +7,13 @@ import urllib.parse
 def parse_get():
 	query = os.environ.get('QUERY_STRING', '')
 	query = query[1:]
-	params = dict(pair.split('=') for pair in query.split('&') if '=' in pair) #for pair in ... if '=' in pair iterates over pair in a=b&c=d&
+	params = {}
+	for pair in query.split('&'):
+		if '=' not in pair:
+			raise ValueError("Malformed expression")
+		key, value = pair.split('=', 1)
+		params[key] = value
+
 	return params
 
 def parse_post():

@@ -45,57 +45,29 @@ std::string	getCurrentTime()
 void	logMessage(LogType level, int server_fd, const std::string& message, ClientInfo *ptr_info, int flag)
 {
 	std::ostringstream					oss;
-	std::string							category, color, msg, str_fd = "";
-	std::pair<std::string, std::string>	pair;
+	std::string							category, color, msg;
+	std::pair<std::string, std::string>	pair = getPairLog(level);
 
-	if (server_fd > 0)
-	{
-		oss << server_fd;
-		str_fd = oss.str();
-		oss.clear();
-		oss.str("");
-	}
-	pair = getPairLog(level);
 	category = pair.first;
 	color = pair.second;
 	while (category.size() != 14)
 		category.append(" ");
-	msg = color + category + RESET;
-	msg.append(getCurrentTime());
-	msg.append("\t-\t");
+	oss << color << category << RESET;
+	oss << getCurrentTime() << "\t-\t";
 	if (server_fd > 0)
 	{
-		msg.append("Server_ID: ");
-		msg.append(str_fd);
-		msg.append(" | ");
+		oss << "Server_ID: " << server_fd << " | ";
 		if (ptr_info != NULL)
-		{
-			msg.append("Client_ID: ");
-			oss << ptr_info->fd;
-			msg.append(oss.str());
-			oss.clear();
-			oss.str("");
-			msg.append(" | ");
-		}
+			oss << "Client_ID: " << ptr_info->fd << " | ";
 	}
-	msg.append(message);
-	if (ptr_info != NULL)
+	oss << message;
+	if (ptr_info != NULL && flag == 1)
 	{
-		if (flag == 1)
-		{
-			msg.append("Request -> (Method: ");
-			msg.append(getStringMethod(ptr_info->info.method));
-			msg.append(" | Path: ");
-			msg.append(ptr_info->info.path);
-			msg.append(")  |  Server -> (Code: ");
-			oss << ptr_info->status_code;
-			msg.append(oss.str());
-			msg.append(" | Msg: ");
-			msg.append(ptr_info->status_msg);
-			msg.append(")");
-		}
+		oss << "Request -> (Method: " << getStringMethod(ptr_info->info.method)
+			<< " | Path: " << ptr_info->info.path << ")  |  Server -> (Code: "
+			<< ptr_info->status_code << " | Msg: " << ptr_info->status_msg << ")";
 	}
-	std::cout << msg << std::endl;
+	std::cout << oss.str() << std::endl;
 }
 
 std::pair<std::string, std::string>	getPairLog(LogType level)
@@ -112,6 +84,7 @@ std::pair<std::string, std::string>	getPairLog(LogType level)
 	return (log_map[level]);
 }
 
+// standard HTTP status messages included for learning purposes (not all are used)
 std::string getStatusMessage(int code)
 {
 	static std::map<int, std::string>	status_map;
@@ -120,18 +93,49 @@ std::string getStatusMessage(int code)
 	{
 		status_map[200] = "OK";
 		status_map[201] = "Created";
+		status_map[202] = "Accepted";
+		status_map[203] = "Non-Authoritative Information";
 		status_map[204] = "No Content";
+		status_map[205] = "Reset Content";
+		status_map[206] = "Partial Content";
+
+		status_map[300] = "Multiple Choices";
+		status_map[301] = "Moved Permanently";
+		status_map[302] = "Found";
 		status_map[303] = "See Other";
+		status_map[304] = "Not Modified";
+		status_map[307] = "Temporary Redirect";
+		status_map[308] = "Permanent Redirect";
+
 		status_map[400] = "Bad Request";
 		status_map[401] = "Unauthorized";
+		status_map[402] = "Payment Required";
+		status_map[403] = "Forbidden";
 		status_map[404] = "Not Found";
 		status_map[405] = "Method Not Allowed";
+		status_map[406] = "Not Acceptable";
 		status_map[408] = "Request Timeout";
 		status_map[409] = "Conflict";
+		status_map[410] = "Gone";
+		status_map[411] = "Length Required";
+		status_map[412] = "Precondition Failed";
 		status_map[413] = "Payload Too Large";
+		status_map[414] = "URI Too Long";
 		status_map[415] = "Unsupported Media Type";
+		status_map[416] = "Range Not Satisfiable";
+		status_map[417] = "Expectation Failed";
+		status_map[421] = "Misdirected Request";
+		status_map[426] = "Upgrade Required";
+		status_map[428] = "Precondition Required";
+		status_map[429] = "Too Many Requests";
+
 		status_map[500] = "Internal Server Error";
+		status_map[501] = "Not Implemented";
+		status_map[502] = "Bad Gateway";
+		status_map[503] = "Service Unavailable";
+		status_map[504] = "Gateway Timeout";
 		status_map[505] = "HTTP Version Not Supported";
+		status_map[511] = "Network Authentication Required";
 	}
     if (status_map.find(code) != status_map.end())
 		return (status_map[code]);
@@ -146,11 +150,32 @@ std::string	getMimeType(const std::string &ext)
 	if (mime_map.empty())
 	{
 		mime_map[".html"] = "text/html";
+		mime_map[".htm"] = "text/html";
 		mime_map[".css"] = "text/css";
+		mime_map[".js"] = "application/javascript";
+		mime_map[".json"] = "application/json";
+		mime_map[".xml"] = "application/xml";
 		mime_map[".png"] = "image/png";
 		mime_map[".jpg"] = "image/jpeg";
 		mime_map[".jpeg"] = "image/jpeg";
+		mime_map[".gif"] = "image/gif";
+		mime_map[".bmp"] = "image/bmp";
 		mime_map[".ico"] = "image/x-icon";
+		mime_map[".svg"] = "image/svg+xml";
+		mime_map[".woff"] = "font/woff";
+		mime_map[".woff2"] = "font/woff2";
+		mime_map[".ttf"] = "font/ttf";
+		mime_map[".otf"] = "font/otf";
+		mime_map[".txt"] = "text/plain";
+		mime_map[".csv"] = "text/csv";
+		mime_map[".pdf"] = "application/pdf";
+		mime_map[".zip"] = "application/zip";
+		mime_map[".tar"] = "application/x-tar";
+		mime_map[".gz"] = "application/gzip";
+		mime_map[".mp3"] = "audio/mpeg";
+		mime_map[".wav"] = "audio/wav";
+		mime_map[".mp4"] = "video/mp4";
+		mime_map[".avi"] = "video/x-msvideo";
 	}
     if (mime_map.find(ext) != mime_map.end())
 		return (mime_map[ext]);
