@@ -464,7 +464,7 @@ int		HttpServer::checkPath(ClientInfo &info, std::string &path, std::string &met
 		if (!_conf->getIndex().empty())
 				autoindex_enabled = false;
 	}
-	if (loc && (method == "POST" || method == "DELETE"))
+	if (loc && (method == "POST" || method == "DELETE") && full_path.find(".py") == std::string::npos)
 		return (true);
 	if (!access(full_path.c_str(), F_OK))
 	{
