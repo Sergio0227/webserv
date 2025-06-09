@@ -24,28 +24,29 @@ class Brain
 		std::map<int, int>						_cgi_read_fd_to_client;
 		fd_set									_send_fd_set, _recv_fd_set;
 
-		void	splitServers(std::vector<std::string>);
-		void	initServerConfigs();
+		
 		void	parseConfigFile(int server_index);
 		void	parseLocation(size_t *i, int server_index, std::string location_name);
-		void	handleConnections();
         void	handleHttpResponseSend(int client_fd);
         void	handleClientRequest(int client_fd);
         void	acceptAndSetupClient(int server_fd);
         void	handleCgiWrite(int cgi_stdin_fd);
         void	handleCgiRead(int fd);
         void	handleCGI(int fd, ClientInfo &info, HttpResponse &res);
-        void	setupServers();
+		void	debugPrintState() const;
         void	closeClientConnection(int fd, int flag);
 		void	addFdToSet(int fd, fd_set &fd_set);
 		void	removeFdFromSet(int fd, fd_set &fd_set);
 		int		isServerFd(int i);
 		int		timeOutHandler();
-		void	debugPrintState() const;
 		
 	public:
-		Brain(std::vector<std::string>& config_files, bool debug);
+		Brain(bool debug);
 		~Brain();
-		int	getNbServers();
+		int		getNbServers();
+		void	handleConnections();
+		void	splitServers(std::vector<std::string>);
+		void	initServerConfigs();
+		void	setupServers();
 		
 };

@@ -17,20 +17,24 @@ int		main(int argc, char *argv[])
 		std::cerr << "Error: Too many arguments \n" << "Usage -> ./webserv [configfile]" <<std::endl;
 		return (EXIT_FAILURE);
 	}
-	signal(SIGINT, handleShutdown);
 	std::string	config_file_path = "configs/default.conf";
 	if (argc == 1 && access(config_file_path.c_str(), R_OK))
 	{
 		std::cerr << "Error: Missing default configuration file at configs/default.conf" <<std::endl;
 		return (EXIT_FAILURE);
 	}
+	signal(SIGINT, handleShutdown);
 	if (argc == 2)
 		config_file_path = argv[1];
 	try
 	{
 		std::vector<std::string>	configFile;
 		configFile = storeFormatedFile(config_file_path);
-		Brain brain(configFile, ENABLE_DEBUG);
+		Brain brain(ENABLE_DEBUG);
+		brain.splitServers(configFile);
+		brain.initServerConfigs();
+		brain.setupServers();
+		brain.handleConnections();
 	}
 	catch (std::exception &e)
 	{

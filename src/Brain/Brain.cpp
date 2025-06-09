@@ -1,7 +1,7 @@
 #include "Brain.hpp"
 #include <stdexcept>
 
-Brain::Brain(std::vector<std::string>& config_file, bool debug) : _debug(debug)
+Brain::Brain(bool debug) : _debug(debug)
 {
 	_nb_servers = 0;
     _max_fd = 0;
@@ -9,11 +9,6 @@ Brain::Brain(std::vector<std::string>& config_file, bool debug) : _debug(debug)
 	_config_files.resize(0);
 	FD_ZERO(&_recv_fd_set);
     FD_ZERO(&_send_fd_set);
-
-	splitServers(config_file);
-	initServerConfigs();
-	setupServers();
-	handleConnections();
 }
 
 void Brain::handleConnections()
@@ -202,9 +197,8 @@ Brain::~Brain()
 {
 	int	k;
 
-	for (int i = 0; i < _nb_servers; i++)
+	for (size_t i = 0; i < _server_conf.size(); i++)
 		delete _server_conf[i];
-
 	for (int i = 0; i < FD_SETSIZE; ++i)
 	{
 		if (FD_ISSET(i, &_recv_fd_set) || FD_ISSET(i, &_send_fd_set))
@@ -225,7 +219,7 @@ Brain::~Brain()
 		}
 	}
 	logMessage(SUCCESS, -1 , "Server(s) have been successfully shut down. All connections closed.", NULL, 0);
-	for (int i = 0; i < _nb_servers; i++)
+	for (size_t i = 0; i < _servers.size(); i++)
 		delete _servers[i];
 }
 
@@ -329,19 +323,19 @@ void Brain::parseLocation(size_t *i, int server_index, std::string location_name
 			if (j > param.size())
 				throw Config::ConfigException("Error: Wrong parameter near: " + param);
 		if (param == "allow_methods")
-			ref_loc.setAllowedMethods(value);
+			ref_loc.setAllowedMethods(value, server_index);
 		else if (param == "root")
-			ref_loc.setRoot(value);
+			ref_loc.setRoot(value, server_index);
 		else if (param == "index")
-			ref_loc.setIndex(value);
+			ref_loc.setIndex(value, server_index);
 		else if (param == "autoindex")
 			ref_loc.setAutoindex(value, server_index);
 		else if (param == "alias")
-			ref_loc.setAlias(value);
+			ref_loc.setAlias(value, server_index);
 		else if (param == "return")
-			ref_loc.setReturnValue(value);
+			ref_loc.setReturnValue(value, server_index);
 		else if (param == "client_max_body_size")
-			ref_loc.setClientMaxBodySize(value);
+			ref_loc.setClientMaxBodySize(value, server_index);
 	}
 	this->_server_conf[server_index]->setLocation(location_name, ref_loc);
 }
